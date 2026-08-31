@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BLOCKER 3.42.0</title>
+<title>BLOCKER 3.43.0</title>
 <link rel="stylesheet" href="blocker.css">
 </head>
 <body>
@@ -25,7 +25,7 @@
     <button class="cmd" id="saveAsBtn" title="Duplicate to a new file (Ctrl+Shift+S)"><svg viewBox="0 0 16 16"><rect x="5.5" y="5.5" width="8" height="8" rx="1"/><path d="M10.5 5.5v-3h-8v8h3"/></svg>Duplicate</button>
     <input id="file" type="file" accept="application/json,.json" hidden>
     <div class="spacer"></div>
-    <span id="stat"></span>
+    <span id="stat"><span id="statCards"></span> · <span id="statLinks"></span> · <span id="zoom" title="Reset zoom"></span></span>
   </header>
 
   <aside>
@@ -94,7 +94,7 @@
 <div id="ghost"><div class="n"></div><div class="s"></div><div class="b"></div></div>
 
 <script>
-const VERSION = '3.42.0';
+const VERSION = '3.43.0';
 // ---------- state ----------
 const blank = () => ({ name: 'Untitled project', nodes: [], edges: [], inProgress: null, tags: [], milestones: [], vision: { statement: '', pillars: [], history: [] }, events: [], lastSeen: null, reviews: [] });
 let S = blank();               // node {id,name,desc,record,tags,done,placed,x,y,col,row}; edge {from,to}: `to` requires `from`
@@ -144,12 +144,12 @@ async function load() {
   const j = store.json(STORE);
   if (j) { S = migrate(j); fileName = j._fileName || null; dirty = !!j._dirty; }
   else { const old = store.json('depplan:v1'); if (old) { S = migrate(old); dirty = true; } }
-  layout(); startSession(); resetHistory(); render(); refreshReady(); refreshHeader(); renderSideTags(); refreshBadge();
+  derive(); layout(); startSession(); resetHistory(); render(); refreshReady(); refreshHeader(); renderSideTags(); refreshBadge();
   if (view === 'direction') renderDir(); else if (view === 'vision') renderVis();
 }
 function autosave() { // session persistence only; the project file is the source of truth
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => store.set(STORE, JSON.stringify({ ...S, _fileName: fileName, _dirty: dirty })), 300);
+  saveTimer = setTimeout(() => store.set(STORE, JSON.stringify({ ...project(), _fileName: fileName, _dirty: dirty })), 300);
 }
 let fileTimer = null, canAutosave = false;
 async function grantWrite(h) { // ask once, at open time; remember whether the grant sticks
@@ -168,9 +168,9 @@ function touch() {
   refreshHeader();
 }
 const undoStack = [], redoStack = []; let lastSnap = null;
-function snapshot() { return JSON.stringify({ name: S.name, vision: S.vision, inProgress: S.inProgress, tags: S.tags, milestones: S.milestones, nodes: S.nodes, edges: S.edges, events: S.events, reviews: S.reviews }); }
+function snapshot() { return JSON.stringify(project()); }
 function commit() {
-  layout(); const now = snapshot(); if (view === 'direction') renderDir();
+  derive(); layout(); const now = snapshot(); if (view === 'direction') renderDir();
   if (lastSnap && lastSnap !== now) { undoStack.push(lastSnap); if (undoStack.length > 100) undoStack.shift(); redoStack.length = 0; }
   lastSnap = now; touch(); render(); refreshReady(); refreshWin(); renderSideTags();
 }
@@ -184,7 +184,12 @@ function redo() { if (!redoStack.length) return; undoStack.push(snapshot()); res
 function resetHistory() { undoStack.length = 0; redoStack.length = 0; lastSnap = snapshot(); }
 
 // ---------- project file ----------
-const serialize = () => JSON.stringify({ appVersion: VERSION, name: S.name, lastSeen: S.lastSeen, vision: S.vision, inProgress: S.inProgress, tags: S.tags, milestones: S.milestones, nodes: S.nodes, edges: S.edges, events: S.events, reviews: S.reviews }, null, 2);
+const DERIVED = ['x', 'y', 'col']; // recomputed by layout() on load; `row` is the author's backlog order and is kept
+const saveNode = n => { const c = { ...n }; for (const k of DERIVED) delete c[k]; return c; };
+function project() { // everything that belongs to the project, listed once: file, session copy and undo all use it
+  return { name: S.name, lastSeen: S.lastSeen, vision: S.vision, inProgress: S.inProgress, tags: S.tags, milestones: S.milestones, nodes: S.nodes.map(saveNode), edges: S.edges, events: S.events, reviews: S.reviews };
+}
+const serialize = () => JSON.stringify({ appVersion: VERSION, ...project() }, null, 2);
 async function saveProject(as = false) {
   const data = serialize();
   if (window.showSaveFilePicker) {
@@ -205,16 +210,19 @@ async function openProject() {
   } else $('file').click();
 }
 async function loadFile(f, handle = null) {
-  try { rememberHandle(handle); $('reopenBtn').hidden = true; const j = JSON.parse(await f.text()); if (!Array.isArray(j.nodes) || !Array.isArray(j.edges)) throw 0;
-    S = migrate(j); if (!j.name) S.name = f.name.replace(/\.json$/i, ''); fileHandle = handle; fileName = f.name; dirty = false; sel = null; cam = { x: 0, y: 0, z: 1 };
-    activeTags.clear(); focus = null; logging = false; layout(); startSession(); resetHistory(); autosave(); render(); refreshReady(); refreshWin(); refreshHeader(); renderSideTags(); }
-  catch { flash('Open failed: that file is not a planner project.'); }
+  let P; // parse and migrate into a local: a bad file must leave the open project untouched
+  try { const j = JSON.parse(await f.text()); if (!Array.isArray(j.nodes) || !Array.isArray(j.edges)) throw 0;
+    P = migrate(j); if (!j.name) P.name = f.name.replace(/\.json$/i, ''); }
+  catch { flash('Open failed: that file is not a planner project.'); return; }
+  rememberHandle(handle); $('reopenBtn').hidden = true;
+  S = P; fileHandle = handle; fileName = f.name; dirty = false; sel = null; cam = { x: 0, y: 0, z: 1 };
+  activeTags.clear(); focus = null; logging = false; derive(); layout(); startSession(); resetHistory(); autosave(); render(); refreshReady(); refreshWin(); refreshHeader(); renderSideTags();
 }
 function newProject() {
   if (dirty && !confirm('Discard unsaved changes to "' + S.name + '"?')) return;
   const name = prompt('Project name', 'Untitled project'); if (name == null) return;
   S = blank(); S.name = name.trim() || 'Untitled project'; fileHandle = null; fileName = null; dirty = true; sel = null; cam = { x: 0, y: 0, z: 1 };
-  activeTags.clear(); logging = false; layout(); startSession(); resetHistory(); autosave(); render(); refreshReady(); refreshWin(); refreshHeader(); renderSideTags();
+  activeTags.clear(); logging = false; derive(); layout(); startSession(); resetHistory(); autosave(); render(); refreshReady(); refreshWin(); refreshHeader(); renderSideTags();
 }
 function refreshHeader() {
   $('proj').textContent = S.name; $('proj').title = fileName ? 'File: ' + fileName : 'Not saved to a file yet';
@@ -229,6 +237,11 @@ function startSession() { prevSeen = S.lastSeen; S.lastSeen = Date.now(); loggin
 function sinceLastVisit() { return prevSeen ? S.events.filter(e => e.at > prevSeen) : []; }
 // ---------- reviews (downward propagation of doctrine changes) ----------
 function pendingReview(x) { const t = x.reviewedAt || 0; return S.reviews.find(r => r.at > t && (r.cards.includes(x.id) || r.milestones.includes(x.id))) || null; }
+function pendingIds() { // cards with an unreviewed doctrine change; the canvas asks once per frame, not once per card
+  const out = new Set();
+  for (const r of S.reviews) for (const id of r.cards) { const n = byId(id); if (n && (n.reviewedAt || 0) < r.at) out.add(id); }
+  return out;
+}
 function touchReview(x, explicit = false) { x.reviewedAt = Date.now(); if (explicit) log('reviewed', x.id, { name: x.name }); }
 function reachOf(tenetIds, all = false) { // milestones serving any of these tenets (or all open milestones), and every card in their cones
   const ms = S.milestones.filter(m => !m.closedAt && (all || m.pillars.some(id => tenetIds.includes(id))));
@@ -236,16 +249,18 @@ function reachOf(tenetIds, all = false) { // milestones serving any of these ten
   return { milestones: ms.map(m => m.id), cards: [...cards] };
 }
 // ---------- graph ----------
-let _ix = { edges: null, len: -1, nodes: null, nlen: -1, deps: new Map(), dents: new Map(), byId: new Map() };
+let _ix = { edges: null, len: -1, nodes: null, nlen: -1, tags: null, tlen: -1, deps: new Map(), dents: new Map(), byId: new Map(), tagBy: new Map() };
 function index() { // rebuilt whenever the arrays change identity or length
   if (_ix.edges !== S.edges || _ix.len !== S.edges.length) {
     _ix.edges = S.edges; _ix.len = S.edges.length; _ix.deps = new Map(); _ix.dents = new Map();
     for (const e of S.edges) { (_ix.deps.get(e.to) || _ix.deps.set(e.to, []).get(e.to)).push(e.from); (_ix.dents.get(e.from) || _ix.dents.set(e.from, []).get(e.from)).push(e.to); }
   }
   if (_ix.nodes !== S.nodes || _ix.nlen !== S.nodes.length) { _ix.nodes = S.nodes; _ix.nlen = S.nodes.length; _ix.byId = new Map(S.nodes.map(n => [n.id, n])); }
+  if (_ix.tags !== S.tags || _ix.tlen !== S.tags.length) { _ix.tags = S.tags; _ix.tlen = S.tags.length; _ix.tagBy = new Map(S.tags.map(t => [t.id, t])); }
   return _ix;
 }
 const byId = id => index().byId.get(id);
+const tagById = id => index().tagBy.get(id);
 const depsOf = id => index().deps.get(id) || [];
 const dependentsOf = id => index().dents.get(id) || [];
 const isReady = n => n.placed && !n.done && depsOf(n.id).every(d => byId(d)?.done);
@@ -267,21 +282,24 @@ let colCount = 1, rowsMax = 6, addBtnRect = null;
 const BACKLOG = -1, DONE = -2; // DONE is off-board: those cards live in the sidebar list
 let colPos = null; // d → display slot when filtering (empty columns skipped)
 const colX = d => COLX0 + ((colPos ? (colPos.get(d) ?? -1) : d + 1)) * COLW, rowY = i => ROWY0 + i * ROWH;
-function layout(force = false) {
+function derive() { // domain state that follows from the graph. Never run while restoring a snapshot: undo must reproduce what it stored
+  if (S.inProgress && !(byId(S.inProgress) && startable(byId(S.inProgress)))) S.inProgress = null;
+  const now = Date.now();
+  for (const n of S.nodes) { if (isReady(n)) { if (!n.readyAt) { n.readyAt = now; log('ready', n.id, { by: null }); } } else if (!n.done) n.readyAt = null; }
+}
+function layout() { // geometry only: columns, rows, card positions
   buildCone();
-  const memo = {}, cols = {};
+  const memo = {}, cols = {}, sortKey = new Map();
   for (const n of S.nodes) { n.col = !n.placed ? BACKLOG : n.done ? DONE : depth(n.id, memo); (cols[n.col] ||= []).push(n); }
   colCount = Math.max(1, ...Object.keys(cols).map(x => +x + 1));
-  const rowOf = {};
+  const rank = (a, b) => sortKey.get(b) - sortKey.get(a) || a.name.localeCompare(b.name);
   for (let d = BACKLOG; d < colCount; d++) {
     const col = cols[d] || [];
     if (d === BACKLOG) col.sort((a, b) => (a.row == null || b.row == null) ? (a.created || 0) - (b.created || 0) : a.row - b.row);
-    else if (d === 0) { col.forEach(n => n._k = downstream(n.id).count); col.sort((a, b) => b._k - a._k || a.name.localeCompare(b.name)); }
-    else { col.forEach(n => n._k = depsOf(n.id).filter(x => !byId(x)?.done).length); col.sort((a, b) => b._k - a._k || a.name.localeCompare(b.name)); }
-    let i = 0; for (const n of col) { if (!visible(n)) { n.row = null; n.x = -1e6; n.y = -1e6; continue; } n.row = i; rowOf[n.id] = i; n.x = colX(d) + PAD; n.y = rowY(i); i++; }
+    else if (d === 0) { col.forEach(n => sortKey.set(n, downstream(n.id).count)); col.sort(rank); }
+    else { col.forEach(n => sortKey.set(n, depsOf(n.id).filter(x => !byId(x)?.done).length)); col.sort(rank); }
+    let i = 0; for (const n of col) { if (!visible(n)) { n.row = null; n.x = -1e6; n.y = -1e6; continue; } n.row = i; n.x = colX(d) + PAD; n.y = rowY(i); i++; }
   }
-  if (S.inProgress && !(byId(S.inProgress) && startable(byId(S.inProgress)))) S.inProgress = null;
-  const tnow = Date.now(); for (const n of S.nodes) { if (isReady(n)) { if (!n.readyAt) { n.readyAt = tnow; log('ready', n.id, { by: null }); } } else if (!n.done) n.readyAt = null; }
   colPos = null;
   if (activeTags.size || cone) { colPos = new Map(); let k = 0; for (let d = BACKLOG; d < colCount; d++) if ((cols[d] || []).some(visible)) colPos.set(d, k++); if (!k) colPos.set(0, 0); }
   for (let d = BACKLOG; d < colCount; d++) for (const n of cols[d] || []) if (n.placed && visible(n)) n.x = colX(d) + PAD;
@@ -314,12 +332,12 @@ function addTask(name) {
   S.nodes.push({ id, name, desc: '', record: '', tags: [...activeTags], created: Date.now(), started: null, doneAt: null, readyAt: null, done: false, placed: false, x: 0, y: 0, row: null });
   layout(); select(id); commit(); $('nameIn').focus(); $('nameIn').select();
 }
-function addDep(a, b) { // a requires b; returns true if added
-  if (a === b || S.edges.some(e => e.from === b && e.to === a)) return false;
-  if (reaches(a, b)) { flash(`Can't add: "${byId(b).name}" already depends on "${byId(a).name}".`); return false; }
-  for (const id of [a, b]) { const n = byId(id); if (!n.placed && !n.desc.trim()) { addDep._blocked = n; return false; } }
+function addDep(a, b) { // a requires b; returns the card that blocked the link (backlog card with no Intent), else null
+  if (a === b || S.edges.some(e => e.from === b && e.to === a)) return null;
+  if (reaches(a, b)) { flash(`Can't add: "${byId(b).name}" already depends on "${byId(a).name}".`); return null; }
+  for (const id of [a, b]) { const n = byId(id); if (!n.placed && !n.desc.trim()) return n; }
   for (const id of [a, b]) { const n = byId(id); if (!n.placed) { n.placed = true; n.row = null; log('placed', n.id); } }
-  S.edges.push({ from: b, to: a }); return true;
+  S.edges.push({ from: b, to: a }); return null;
 }
 function toggleDep(a, b) {
   if (a === b) return;
@@ -378,7 +396,8 @@ function flash(t) { const m = $('msg'); m.textContent = t; m.classList.add('on')
 
 // ---------- canvas ----------
 const cv = $('cv'), ctx = cv.getContext('2d');
-const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const cssCache = new Map(); // the palette is fixed at load; clear this if a theme switch ever lands
+const css = v => { let c = cssCache.get(v); if (c === undefined) { c = getComputedStyle(document.documentElement).getPropertyValue(v).trim(); cssCache.set(v, c); } return c; };
 const F = () => css('--font');
 const SB = 10; // scrollbar thickness
 function resize() {
@@ -449,8 +468,8 @@ function render() {
     const a = byId(e.from), b = byId(e.to); if (!a || !b || a.done || b.done || !visible(a) || !visible(b)) return;
     const ax = a.x + NODEW, ay = a.y + NODEH / 2, bx = b.x, by = b.y + NODEH / 2;
     if (!selected.has(e.from) && !selected.has(e.to)) return; // only the selection's own arrows
-    const focus = selected.has(e.to) ? b : a; // colour from the selected end
-    ctx.strokeStyle = a.done ? css('--done') : stepColor(focus.col);
+    const lead = selected.has(e.to) ? b : a; // colour from the selected end
+    ctx.strokeStyle = a.done ? css('--done') : stepColor(lead.col);
     ctx.lineWidth = 2; ctx.globalAlpha = a.done && b.done ? .4 : 1;
     ctx.beginPath();
     const g1 = ax + PAD, g2 = bx - PAD; // gutter centres; shared segments overlap exactly
@@ -467,6 +486,7 @@ function render() {
     ctx.globalAlpha = 1;
   });
   // nodes
+  const pending = pendingIds(); let met = null;
   for (const n of S.nodes) {
     if (n.done || !visible(n) || (drag?.moved && drag.node === n)) continue;
     const ready = isReady(n), isSel = selected.has(n.id), hitInfo = searchHits.get(n.id);
@@ -488,14 +508,14 @@ function render() {
     }
     ctx.fillStyle = n.done ? css('--text3') : css('--text');
     ctx.fillText(t, n.x + 14, n.y + 19);
-    if (pendingReview(n)) { ctx.fillStyle = '#f7c948'; ctx.beginPath(); ctx.moveTo(n.x + 4, n.y); ctx.lineTo(n.x + 14, n.y); ctx.lineTo(n.x + 4, n.y + 10); ctx.fill(); }
-    n.tags.forEach((tid, i) => { const g = S.tags.find(x => x.id === tid); if (!g) return; ctx.fillStyle = g.color; rr(n.x + NODEW - 14 - 22 * (i + 1) + 4, n.y + 8, 18, 4, 2); ctx.fill(); });
+    if (pending.has(n.id)) { ctx.fillStyle = '#f7c948'; ctx.beginPath(); ctx.moveTo(n.x + 4, n.y); ctx.lineTo(n.x + 14, n.y); ctx.lineTo(n.x + 4, n.y + 10); ctx.fill(); }
+    n.tags.forEach((tid, i) => { const g = tagById(tid); if (!g) return; ctx.fillStyle = g.color; rr(n.x + NODEW - 14 - 22 * (i + 1) + 4, n.y + 8, 18, 4, 2); ctx.fill(); });
     if (n.done) { ctx.strokeStyle = css('--text3'); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(n.x + 14, n.y + 19); ctx.lineTo(n.x + 14 + ctx.measureText(t).width, n.y + 19); ctx.stroke(); }
     ctx.font = '12px ' + F();
     const blocking = n.placed && !n.done ? depsOf(n.id).filter(d => !byId(d)?.done).length : 0;
     let right = 0;
     const unblocks = ready ? downstream(n.id).count : 0;
-    if (ip && n.started) { const age = Math.floor((Date.now() - n.started) / DAY), med = metrics().cycle, txt = age + 'd'; right = ctx.measureText(txt).width + 8; ctx.fillStyle = med != null && age > med ? css('--danger') : css('--accent'); ctx.textAlign = 'right'; ctx.fillText(txt, n.x + NODEW - 12, n.y + 39); ctx.textAlign = 'left'; }
+    if (ip && n.started) { const age = Math.floor((Date.now() - n.started) / DAY), med = (met ??= metrics()).cycle, txt = age + 'd'; right = ctx.measureText(txt).width + 8; ctx.fillStyle = med != null && age > med ? css('--danger') : css('--accent'); ctx.textAlign = 'right'; ctx.fillText(txt, n.x + NODEW - 12, n.y + 39); ctx.textAlign = 'left'; }
     else if (blocking || unblocks) { // right-hand count: blockers on blocked cards, downstream reach on ready ones
       const txt = blocking ? `${blocking} ⊘` : `↳ ${unblocks}`; right = ctx.measureText(txt).width + 8;
       ctx.fillStyle = blocking ? stepColor(n.col, .9) : css('--text3'); ctx.textAlign = 'right'; ctx.fillText(txt, n.x + NODEW - 12, n.y + 39); ctx.textAlign = 'left';
@@ -516,10 +536,15 @@ function render() {
     if (b === h) rr(b.pos + 2, H - SB + 3, b.len - 4, SB - 6, 2); else rr(W - SB + 3, b.pos + 2, SB - 6, b.len - 4, 2);
     ctx.fill();
   }
-  const done = S.nodes.filter(n => n.done).length;
-  $('stat').innerHTML = `${done} of ${S.nodes.length} done  ·  ${S.edges.length} links  ·  <span id="zoom" title="Reset zoom">${Math.round(cam.z * 100)}%</span>`;
-  $('zoom').onclick = () => { const W = cv.clientWidth, H = cv.clientHeight, cx = (W / 2 - cam.x) / cam.z, cy = (H / 2 - cam.y) / cam.z; cam.z = 1; cam.x = W / 2 - cx; cam.y = H / 2 - cy; clampCam(); render(); placeWin(); };
+  refreshStat();
 }
+let statText = null;
+function refreshStat() { // render() runs on every pointermove; the DOM is only touched when the numbers move
+  const done = S.nodes.filter(n => n.done).length, zoom = Math.round(cam.z * 100);
+  const txt = `${done}/${S.nodes.length}/${S.edges.length}/${zoom}`; if (txt === statText) return; statText = txt;
+  $('statCards').textContent = `${done} of ${S.nodes.length} done`; $('statLinks').textContent = `${S.edges.length} links`; $('zoom').textContent = zoom + '%';
+}
+$('zoom').onclick = () => { const W = cv.clientWidth, H = cv.clientHeight, cx = (W / 2 - cam.x) / cam.z, cy = (H / 2 - cam.y) / cam.z; cam.z = 1; cam.x = W / 2 - cx; cam.y = H / 2 - cy; clampCam(); render(); placeWin(); };
 
 // ---------- input ----------
 let drag = null;
@@ -552,7 +577,7 @@ cv.addEventListener('pointermove', ev => {
     g.style.left = sx + 'px'; g.style.top = sy + 'px'; g.style.transform = `scale(${cam.z})`;
     $('depList').classList.toggle('drop', $('win').classList.contains('on') && dropTarget(drag.node));
     document.querySelectorAll('#calGrid .d.drop, #calMs li.drop').forEach(e => e.classList.remove('drop')); const cd = calDayAt(ev) || msAt(ev); if (cd) cd.classList.add('drop');
-    const dr = $('doneList').getBoundingClientRect(); $('doneList').classList.toggle('drop', true); render();
+    $('doneList').classList.add('drop'); render();
   }
 });
 function showGhost(d) {
@@ -578,14 +603,14 @@ cv.addEventListener('pointerup', ev => {
   if (drag?.node && !drag.moved) { select(drag.node.id, drag.mode); drag = null; cv.classList.remove('drag'); render(); return; }
   if (drag?.moved) {
     const n = drag.node, group = drag.wasSel ? [...selected].map(byId).filter(Boolean) : [n];
-    if (calDay || calMs) { const ids = group.map(m => m.id); const target = calMs ? msById(calMs) : S.milestones.find(m => m.due === calDay); if (target) { target.parts = [...new Set([...target.parts, ...ids])]; focus = target.id; } else newMilestone(calDay, ids); layout(); commit(); drag = null; cv.classList.remove('drag'); render(); return; } // new milestone on a day, or add parts
+    if (calDay || calMs) { const ids = group.map(m => m.id); const target = calMs ? msById(calMs) : S.milestones.find(m => m.due === calDay); if (target) addParts(target, ids); else newMilestone(calDay, ids); layout(); commit(); drag = null; cv.classList.remove('drag'); render(); return; } // new milestone on a day, or add parts
     if (overDepList(ev) && dropTarget(n)) { // drop onto Requires: target task requires every dragged card
       const gids = new Set(group.map(m => m.id));
       let targets = [...selected].filter(id => !gids.has(id)); if (!targets.length) targets = [sel];
-      addDep._blocked = null;
-      for (const t of targets) group.forEach(m => { if (m.id !== t) addDep(t, m.id); });
-      layout(); commit(); if (addDep._blocked) intentOk(addDep._blocked); placeWin();
-      if (added && !byId(target).placed) {} // (addDep places both ends; layout above assigns their columns) drag = null; cv.classList.remove('drag'); render(); return;
+      let blocked = null;
+      for (const t of targets) group.forEach(m => { if (m.id !== t) blocked = addDep(t, m.id) || blocked; });
+      layout(); commit(); if (blocked) intentOk(blocked); placeWin();
+      drag = null; cv.classList.remove('drag'); render(); return;
     }
     const bx0 = colPos ? COLX0 + ((colPos.get(BACKLOG) ?? -1) + 1) * COLW : colX(0);
     const cx = n.x + NODEW / 2, zone = onDone ? DONE : cx < bx0 ? BACKLOG : 0; // which region it was dropped in
@@ -610,7 +635,7 @@ cv.addEventListener('pointerup', ev => {
 cv.addEventListener('dblclick', ev => { const n = hit(toWorld(ev)); if (!n) return;
   if (!n.placed) { if (!intentOk(n)) return; n.placed = true; n.row = null; log('placed', n.id); }            // backlog → Ready
   else if (S.inProgress === n.id) setInProgress(null);        // in progress → not
-  else if (isReady(n)) { const b = startBlock(n); if (b) { flash(`Not startable: "${b.m.name}" is ${b.chain} steps deep — ${b.blocked} part${b.blocked === 1 ? '' : 's'} still ${b.blocked === 1 ? 'has' : 'have'} prerequisites.`); return; } setInProgress(n.id); }   // Ready → in progress
+  else if (isReady(n)) { const b = startBlock(n); if (b) { flashBlock(b); return; } setInProgress(n.id); }   // Ready → in progress
   else return;                                                // blocked: nothing to do
   commit(); });
 cv.addEventListener('wheel', ev => {
@@ -645,6 +670,7 @@ addEventListener('keydown', ev => {
   if ((ev.key === 'Delete' || ev.key === 'Backspace') && selected.size) removeSelected();
 });
 addEventListener('beforeunload', ev => { if (dirty && !(fileHandle && canAutosave)) { ev.preventDefault(); ev.returnValue = ''; } });
+addEventListener('error', ev => flash('Something went wrong: ' + (ev.message || 'see the console'))); // a throw inside a handler used to die silently
 
 // ---------- floating task window ----------
 let winPos = null; // user-dragged position; once set, every task opens there
@@ -741,7 +767,7 @@ function runSearch() {
   const res = [];
   if (query) for (const n of S.nodes) { if (!visible(n)) continue;
     for (const [f, label] of FIELDS) {
-      const v = f === '_tags' ? n.tags.map(t => S.tags.find(g => g.id === t)?.name || '').join(', ') : (n[f] || ''), i = v.toLowerCase().indexOf(query);
+      const v = f === '_tags' ? n.tags.map(t => tagById(t)?.name || '').join(', ') : (n[f] || ''), i = v.toLowerCase().indexOf(query);
       if (i >= 0) { const info = { field: label, text: v, at: i }; searchHits.set(n.id, info); res.push({ n, info }); break; }
     }
   }
@@ -763,7 +789,7 @@ function runSearch() {
   });
   ul._res = res; render(); if ($('search').classList.contains('on')) placeSearch();
 }
-function pickSearch(r) { closeSearch(); if (r.ms) { if (focus !== r.ms.id) setFocus(r.ms.id, true); return; } if (r.tenet) { setView('vision'); return; } const n = r.n; select(n.id); if (!n.done) cam.x = Math.min(0, -(n.x * cam.z) + 40); cam.y = n.done ? cam.y : Math.min(0, -(n.y * cam.z) + 100); clampCam(); render(); placeWin(); }
+function pickSearch(r) { closeSearch(); if (r.ms) { if (focus !== r.ms.id) setFocus(r.ms.id, true); return; } if (r.tenet) { setView('vision'); return; } jumpTo(r.n.id); }
 $('searchIn').addEventListener('input', runSearch);
 $('searchIn').addEventListener('keydown', ev => {
   ev.stopPropagation();
@@ -778,7 +804,6 @@ $('search').addEventListener('pointerdown', ev => { if (ev.target === $('search'
 // ---------- tags ----------
 const PALETTE = ['#60cdff', '#6ccb5f', '#f7c948', '#ff8c42', '#ff6b8b', '#c58cff', '#4fd1c5', '#a3a3a3', '#f2f2f2', '#ffd6a5'];
 let tagEditing = null; // tag id being edited, 'new', or null
-function tagById(id) { return S.tags.find(t => t.id === id); }
 function renderTagRow() {
   const n = byId(sel), row = $('tagRow'); row.innerHTML = ''; if (!n) return;
   n.tags.map(tagById).filter(Boolean).forEach(t => { const c = document.createElement('span'); c.className = 'chip'; c.style.background = t.color; c.textContent = t.name; c.title = 'Click to remove'; c.onclick = () => { n.tags = n.tags.filter(x => x !== t.id); commit(); }; row.appendChild(c); });
@@ -862,7 +887,7 @@ $('proj').style.cursor = 'pointer'; $('proj').title = 'Rename project';
 function item(n, cls) {
   const li = document.createElement('li'); li.className = 'item ' + cls;
   li.innerHTML = `<span class="n"></span>`; li.querySelector('.n').textContent = n.name;
-  li.onclick = () => { toDesign(); select(n.id); if (!n.done) { cam.x = Math.min(0, -(n.x * cam.z) + 40); cam.y = Math.min(0, -(n.y * cam.z) + 100); clampCam(); } render(); placeWin(); };
+  li.onclick = () => jumpTo(n.id);
   return li;
 }
 function downstream(id) { // undone transitive dependents: count and longest chain
@@ -873,6 +898,20 @@ function downstream(id) { // undone transitive dependents: count and longest cha
 let calMonth = (() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; })();
 const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const toDesign = () => { if (view !== 'design') setView('design'); };
+function jumpTo(id) { // sidebar, search, Direction: every 'show me that card' path lands here
+  const n = byId(id); if (!n) return;
+  toDesign(); select(id);
+  if (!n.done) { cam.x = Math.min(0, -(n.x * cam.z) + 40); cam.y = Math.min(0, -(n.y * cam.z) + 100); clampCam(); }
+  render(); placeWin();
+}
+function removeMilestone(m) {
+  log('milestone.removed', m.id, { name: m.name });
+  S.milestones = S.milestones.filter(x => x !== m);
+  if (focus === m.id) focus = null; if (msEditing === m.id) msEditing = null; if (dirOpen === m.id) dirOpen = null;
+  commit();
+}
+function addParts(m, ids) { m.parts = [...new Set([...m.parts, ...ids])]; focus = m.id; }
+function flashBlock(b) { flash(`Not startable: "${b.m.name}" is ${b.chain} steps deep — ${b.blocked} part${b.blocked === 1 ? '' : 's'} still ${b.blocked === 1 ? 'has' : 'have'} prerequisites.`); }
 function setFocus(id, go = false) { if (go) toDesign(); focus = focus === id ? null : id; msEditing = null; layout(); clampCam(); render(); refreshReady(); placeWin(); }
 let msEditing = null;
 function newMilestone(due, parts) { const m = { id: 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: 'Milestone', due, parts: [...new Set(parts)], history: [{ at: Date.now(), due }], record: '', closedAt: null, pillars: [] }; S.milestones.push(m); log('milestone.created', m.id, { name: m.name, due }); focus = m.id; msEditing = m.id; return m; }
@@ -911,7 +950,7 @@ function refreshMilestones() {
     e.dataset.day = k; e.textContent = d.getDate(); e.title = list.map(ms => ms.name).join('\n');
     if (list.length) { const dots = document.createElement('div'); dots.className = 'dots'; list.slice(0, 4).forEach(ms => { const i2 = document.createElement('i'); if (!isDone(ms) && k < today) i2.className = 'late'; dots.appendChild(i2); }); e.appendChild(dots); }
     e.onclick = () => {
-      if (msArm) { const ids = armedIds(); msArm = false; if (list.length) { const ms = list[0]; ms.parts = [...new Set([...ms.parts, ...ids])]; focus = ms.id; } else newMilestone(k, ids); commit(); return; }
+      if (msArm) { const ids = armedIds(); msArm = false; if (list.length) addParts(list[0], ids); else newMilestone(k, ids); commit(); return; }
       if (list.length) { const i2 = list.findIndex(ms => ms.id === focus); setFocus(list[(i2 + 1) % list.length].id, true); } };
     g.appendChild(e);
   }
@@ -931,9 +970,9 @@ function refreshMilestones() {
       const ed = document.createElement('div'); ed.className = 'msed'; ed.onclick = ev => ev.stopPropagation();
       const inp = document.createElement('input'); inp.className = 'tb'; inp.value = ms.name; inp.oninput = () => { ms.name = inp.value || 'Milestone'; touch(); }; inp.onkeydown = ev => { ev.stopPropagation(); if (ev.key === 'Enter' || ev.key === 'Escape') { msEditing = null; commit(); } };
       const parts = document.createElement('ul'); parts.className = 'parts';
-      for (const id of ms.parts) { const n = byId(id); if (!n) continue; const p = document.createElement('li'); p.innerHTML = `<span class="n"></span><button class="x">×</button>`; p.querySelector('.n').textContent = n.name; p.querySelector('.n').onclick = () => { select(id); render(); placeWin(); }; p.querySelector('.x').onclick = () => { ms.parts = ms.parts.filter(x => x !== id); commit(); }; parts.appendChild(p); }
+      for (const id of ms.parts) { const n = byId(id); if (!n) continue; const p = document.createElement('li'); p.innerHTML = `<span class="n"></span><button class="x">×</button>`; p.querySelector('.n').textContent = n.name; p.querySelector('.n').onclick = () => jumpTo(id); p.querySelector('.x').onclick = () => { ms.parts = ms.parts.filter(x => x !== id); commit(); }; parts.appendChild(p); }
       const row = document.createElement('div'); row.className = 'row';
-      const del = document.createElement('button'); del.className = 'cmd danger'; del.textContent = 'Remove'; del.onclick = () => { log('milestone.removed', ms.id, { name: ms.name }); S.milestones = S.milestones.filter(x => x !== ms); if (focus === ms.id) focus = null; msEditing = null; commit(); };
+      const del = document.createElement('button'); del.className = 'cmd danger'; del.textContent = 'Remove'; del.onclick = () => removeMilestone(ms);
       const ok = document.createElement('button'); ok.className = 'cmd'; ok.textContent = 'Done'; ok.onclick = () => { msEditing = null; commit(); };
       row.append(del, ok); ed.append(inp, parts, row); li.appendChild(ed); setTimeout(() => inp.focus(), 0);
     } else { const e = document.createElement('span'); e.className = 'ed'; e.textContent = '✎'; e.title = 'Edit'; e.onclick = ev => { ev.stopPropagation(); msEditing = ms.id; refreshMilestones(); }; li.appendChild(e); }
@@ -960,9 +999,9 @@ function refreshReady() {
   if (ip && visible(ip)) { const li = item(ip, 'prog'); li.ondblclick = () => { setInProgress(null); commit(); }; const age = ip.started ? Math.floor((Date.now() - ip.started) / DAY) : 0; li.innerHTML = `<span class="ok" style="color:var(--accent)">▶</span><span class="n"></span><span class="w" style="font-size:11px;color:var(--text4)">${age}d</span>`; li.querySelector('.n').textContent = ip.name; rl.appendChild(li); }
   const ready = S.nodes.filter(n => isReady(n) && visible(n) && n.id !== S.inProgress).map(n => ({ n, w: downstream(n.id) })).sort((a, b) => b.w.chain - a.w.chain || b.w.count - a.w.count || a.n.name.localeCompare(b.n.name));
   rl.style.display = ready.length || ip ? '' : 'none';
-  for (const { n, w } of ready) { const li = item(n, 'ready'); li.ondblclick = () => { if (S.inProgress !== n.id) { const b = startBlock(n); if (b) { flash(`Not startable: "${b.m.name}" is ${b.chain} steps deep.`); return; } } setInProgress(S.inProgress === n.id ? null : n.id); commit(); }; const hb = startBlock(n); if (hb) { li.style.borderLeftColor = 'var(--text4)'; li.title = `Held by ${hb.m.name} (${hb.chain} steps)`; }
+  for (const { n, w } of ready) { const li = item(n, 'ready'); li.ondblclick = () => { if (S.inProgress !== n.id) { const b = startBlock(n); if (b) { flashBlock(b); return; } } setInProgress(S.inProgress === n.id ? null : n.id); commit(); }; const hb = startBlock(n); if (hb) { li.style.borderLeftColor = 'var(--text4)'; li.title = `Held by ${hb.m.name} (${hb.chain} steps)`; }
     const wait = n.readyAt ? Math.floor((Date.now() - n.readyAt) / DAY) : 0; const k = document.createElement('span'); k.className = 'w'; k.style.cssText = 'font-size:11px;color:var(--text4)'; k.textContent = (w.count ? `↳ ${w.count}` : '') + (wait >= 1 ? (w.count ? ' · ' : '') + wait + 'd' : ''); k.title = `Unblocks ${w.count} (chain ${w.chain}) · waiting ${wait}d`; if (k.textContent) li.appendChild(k); rl.appendChild(li); }
-  const dl = $('doneList'), done = S.nodes.filter(n => n.done && (!cone || cone.has(n.id))).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0)); dl.innerHTML = '';
+  const dl = $('doneList'), done = S.nodes.filter(n => n.done && visible(n)).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0)); dl.innerHTML = '';
   $('doneCount').textContent = done.length ? done.length : '';
   dl.style.display = done.length ? '' : 'none';
   const weekOf = ts => { if (!ts) return null; const d = new Date(ts); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.getTime(); };
@@ -1103,14 +1142,14 @@ function renderDir() {
     const nm = box.querySelector('.ename'); nm.onkeydown = ev => ev.stopPropagation(); nm.oninput = () => { m.name = nm.value || 'Milestone'; touch(); }; nm.onchange = () => commit();
     const dt = box.querySelector('.edate'); dt.onchange = () => { const d = dt.value || null; if (d !== m.due) { log('milestone.moved', m.id, { from: m.due, to: d }); m.due = d; m.history.push({ at: Date.now(), due: d }); commit(); } };
     box.querySelector('[data-focus]').onclick = () => { setFocus(m.id); renderDir(); };
-    box.querySelector('[data-remove]').onclick = () => { log('milestone.removed', m.id, { name: m.name }); S.milestones = S.milestones.filter(x => x !== m); if (focus === m.id) focus = null; dirOpen = null; commit(); };
+    box.querySelector('[data-remove]').onclick = () => removeMilestone(m);
     box.querySelectorAll('[data-pillar]').forEach(c => c.onclick = () => { const id = c.dataset.pillar; m.pillars = m.pillars.includes(id) ? m.pillars.filter(x => x !== id) : [...m.pillars, id]; commit(); });
-    box.querySelectorAll('[data-jump]').forEach(n => n.onclick = () => { setView('design'); select(n.dataset.jump); const node = byId(n.dataset.jump); if (node && !node.done) { cam.x = Math.min(0, -(node.x * cam.z) + 40); cam.y = Math.min(0, -(node.y * cam.z) + 100); clampCam(); } render(); placeWin(); });
+    box.querySelectorAll('[data-jump]').forEach(n => n.onclick = () => jumpTo(n.dataset.jump));
     box.querySelectorAll('[data-part]').forEach(b => b.onclick = () => { m.parts = m.parts.filter(x => x !== b.dataset.part); commit(); }); }
   el.querySelectorAll('[data-rev-ms]').forEach(b => b.onclick = ev => { ev.stopPropagation(); touchReview(msById(b.dataset.revMs), true); commit(); });
   el.querySelectorAll('[data-rev-card]').forEach(b => b.onclick = ev => { ev.stopPropagation(); touchReview(byId(b.dataset.revCard), true); commit(); });
   el.querySelectorAll('[data-openms]').forEach(x => x.onclick = () => { dirOpen = x.dataset.openms; renderDir(); });
-  el.querySelectorAll('[data-jump]').forEach(n => n.onclick = () => { setView('design'); select(n.dataset.jump); const node = byId(n.dataset.jump); if (node && !node.done) { cam.x = Math.min(0, -(node.x * cam.z) + 40); cam.y = Math.min(0, -(node.y * cam.z) + 100); clampCam(); } render(); placeWin(); });
+  el.querySelectorAll('[data-jump]').forEach(n => n.onclick = () => jumpTo(n.dataset.jump));
   const ra = el.querySelector('#revAll'); if (ra) ra.onclick = () => { S.nodes.forEach(n => pendingReview(n) && touchReview(n, true)); S.milestones.forEach(m => pendingReview(m) && touchReview(m, true)); commit(); };
   const nb = el.querySelector('#newMsBtn'); if (nb) nb.onclick = () => { const m = newMilestone(null, []); focus = null; msEditing = null; dirOpen = m.id; commit(); $('dir').querySelector('.ename')?.focus(); };
   el.querySelectorAll('textarea[data-rec]').forEach(t => { t.onclick = ev => ev.stopPropagation(); t.onkeydown = ev => ev.stopPropagation(); t.oninput = () => { const mm = msById(t.dataset.rec); mm.record = t.value; touchReview(mm); t.classList.remove('err'); touch(); }; t.onchange = () => commit(); });
