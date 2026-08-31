@@ -1,0 +1,1464 @@
+<!doctype html>
+<!--
+  Blocker (formerly Dependency Planner) — CHANGELOG (Semantic Versioning: MAJOR.MINOR.PATCH)
+  3.41.1 2026-08-30  Sidebar panes (Milestones, Ready, Done) start collapsed; expand state still remembered per pane.
+  3.41.0 2026-08-30  Backlog always shows an "+ Add task" slot as its first empty row; clicking it creates and opens a task.
+  3.40.4 2026-08-30  Change-log wording: "Pillar added/removed" → "Tenet added/removed" (past entries keep their stored text).
+  3.40.3 2026-08-30  Explicit review (Reviewed / Mark reviewed / Mark all) is logged with who and what; Activity has a Reviews filter.
+  3.40.2 2026-08-30  Rejection lines: red ✕ prefix replaced with a subtle hanging indent + muted dash.
+  3.40.1 2026-08-30  Vision layout: statement at top with no heading; "Doctrine" now heads the tenet list.
+  3.40.0 2026-08-30  Vision page reframed (superseded by 3.40.1).
+  3.39.2 2026-08-30  Vision edit: "+ Pillar" button relabelled "+ Tenet".
+  3.39.1 2026-08-30  Internal: search result key renamed pillar → tenet.
+  3.39.0 2026-08-30  Tenets can carry multiple rejection lines (rejects[]); editor adds/removes lines per tenet; read view and milestone tooltips list them. Old single desc migrates to rejects[0].
+  3.38.0 2026-08-30  Downward propagation: a Doctrine/Tenet change records its reach (milestones serving the changed
+                     tenets, and every card in their cones) on the event and in reviews[]. Affected cards and milestones
+                     are flagged "awaiting review" until touched (record edited, done, approved) or marked reviewed.
+                     Board marks flagged cards; Direction lists what's awaiting review; Activity shows the reach.
+  3.37.0 2026-08-30  Vision terminology: the statement is the Doctrine, pillars are Tenets (Vision tab, milestone editor, Direction column, search).
+  3.36.2 2026-08-29  Arrows run down the gutter centre with no per-arrow offset, so shared segments overlap exactly.
+  3.36.1 2026-08-29  "Only Ready work can be worked on" reinforced: milestones whose parts are all Ready report status
+                     "ready" (Steps shows "Ready" instead of 1) in Direction and the calendar; deeper ones show their
+                     step count in depth colour; legend states the rule.
+  3.36.0 2026-08-29  Hard constraint: a card that belongs to an open milestone with more than one step can't be started —
+                     the milestone isn't startable until every part is Ready. Start is hidden and double-click reports
+                     which milestone and how many parts still have prerequisites. Cards outside milestones are unconstrained.
+  3.35.0 2026-08-29  Remembers the last opened project file (handle kept in IndexedDB). On launch it reopens it
+                     directly if the browser still holds permission; otherwise a "Reopen <file>" button in the header
+                     asks once. Falls back to the session copy as before.
+  3.34.1 2026-08-29  Direction: the Steps figure is coloured on the board's depth scale (green → red).
+  3.34.0 2026-08-29  Direction: milestone rows expand on click — name, target date, pillars, record (always editable),
+                     parts (jump / remove), focus on board, remove milestone. "New milestone" creates an empty, undated
+                     one. Pillar picker removed from the sidebar editor (sidebar keeps name and parts).
+  3.33.2 2026-08-29  Direction Activity: filter chips (Done · Started/stopped · Ready · Placed · Milestones · Vision · Since last visit), remembered.
+  3.33.1 2026-08-29  Hovering ◆ on a task in a milestone shows ✕; click removes it (from the focused milestone if it contains the card, else from all).
+  3.33.0 2026-08-29  Task window footer: Start on Ready cards; Done and Stop on the in-progress card.
+  3.32.2 2026-08-29  All arrows use the same rounded-orthogonal shape; curves removed. Detours only when a card is in the way.
+  3.32.1 2026-08-29  Clicking the zoom figure in the header resets zoom to 100%.
+  3.32.0 2026-08-29  Event log: every state change (placed, started, stopped, done, reopened, became Ready, milestone
+                     created/moved/approved/revoked, vision committed) is appended to events[] with who and when.
+                     Direction shows an Activity list with a "since last visit" divider; the tab shows the count of
+                     things that changed while you were away. lastSeen stored on the project. Authorship is "you"
+                     until sign-in exists.
+  3.31.0 2026-08-28  Milestone approval is director-owned: a complete milestone is approved from the Direction tab
+                     (record written there, Approve button), and can be revoked there. Status "closed" → "approved".
+                     Search also finds milestones (focus) and pillars (Vision). Text edits become undo steps when
+                     the field is left. Search bar has a magnifier.
+  3.30.4 2026-08-28  Cleanup: dead code and CSS from removed features (toggles, window bar, milestone flyout) dropped;
+                     deleting a card also removes it from milestone parts; legend covers milestone gestures.
+  3.30.3 2026-08-28  Title icon removed; sidebar toggle moved into the top-left corner of the content area.
+  3.30.2 2026-08-28  Name set in all caps: BLOCKER.
+  3.30.1 2026-08-28  Fix: hiding the sidebar collapsed the board into the zero-width column (grid auto-placement).
+  3.30.0 2026-08-28  Renamed: Blocker.
+  3.29.5 2026-08-28  Selecting a task, tag or milestone in the sidebar switches to the Design tab if another tab is showing.
+  3.29.4 2026-08-28  "Save as" renamed Duplicate, with an icon.
+  3.29.3 2026-08-28  Vision: pillar names wrap in a fixed-width column instead of pushing the description.
+  3.29.2 2026-08-28  Project name moved ahead of the tabs, bold.
+  3.29.1 2026-08-28  Three exclusive tabs: Vision · Direction · Design (the board). One is always active; Design by default.
+  3.29.0 2026-08-28  Vision tab: project statement and pillars, edited explicitly and committed — every commit is
+                     logged with its date. Pillars attach to milestones (picker in the milestone editor) and appear as a
+                     column in Direction, plus a per-pillar coverage summary and an orphan count. Data: vision
+                     {statement, pillars[], history[]}, milestone.pillars[].
+  3.28.1 2026-08-28  Direction table: Status first; every column header sorts (click toggles direction).
+  3.28.0 2026-08-28  Direction view (header toggle): promises vs delivery. Pace (cards/week, 4-week window), median
+                     cycle time, median Ready age; per milestone: target, pace date, remaining chain, progress, slips,
+                     status, record. Data: milestone.history (date changes), milestone.record/closedAt (closing a
+                     complete milestone requires a Record), node.readyAt. Cards show age in progress; Ready list shows
+                     time waiting; calendar entries show pace date.
+  3.27.6 2026-08-28  Collapsing the Milestones pane clears the focused milestone.
+  3.27.5 2026-08-28  Focused-milestone bar moved below the calendar into a fixed-height slot, so the sidebar doesn't reflow.
+  3.27.4 2026-08-28  Fix: focus bar stayed visible after clearing (CSS display overrode hidden).
+  3.27.3 2026-08-28  Focused milestone shown above the calendar with × to clear, regardless of the month displayed.
+  3.27.2 2026-08-28  Calendar interactions settled: day click only focuses; dropping cards (or ◇ + day) adds to that
+                     day's milestone or creates one; a milestone's date changes only by dragging its entry onto a day.
+  3.27.1 2026-08-28  ◇ arms instead of opening a flyout: click it, then a calendar day — adds the task (or selection)
+                     to that day's milestone, or creates one there. Flyout removed.
+  3.27.0 2026-08-28  ◇ button back beside the task name: opens a flyout listing milestones; click to add/remove the
+                     open task (or the whole selection) as a part. ◆ when the task is a part of any milestone.
+  3.26.2 2026-08-28  Double-click a Ready list entry to toggle it in progress.
+  3.26.1 2026-08-28  While a tag or milestone filter is active, columns with no matching cards are hidden; labels keep true depth.
+  3.26.0 2026-08-28  Milestones are no longer cards. They live on the project (milestones[]: name, due, parts) and act
+                     as a filter: focusing one restricts the board, Ready and Done to its cone. Create by dropping
+                     cards on a calendar day; add parts by dropping on a milestone; rename/remove inline. Sidebar
+                     order: Milestones, Ready, Done. Existing milestone cards migrate automatically.
+  3.25.2 2026-08-28  Milestone cards: inner frame removed; the diamond is the only marker.
+  3.25.1 2026-08-28  Sidebar pane titled "Milestones".
+  3.25.0 2026-08-28  Calendar pane replaces the milestone list: month grid with milestone markers. Click a day to set
+                     the open milestone's date; drop a card on a day to make it a milestone due then; click a marked
+                     day to focus that milestone. Date input removed from the task window.
+  3.24.0 2026-08-28  Milestones: any card can be flagged (◆ next to the name) and given a target date. Milestone cards
+                     draw with a diamond, show days-to-target and their longest remaining chain. Sidebar "Milestones"
+                     pane lists them with cone progress; click one to focus the board on its cone (transitive
+                     prerequisites) — combines with tags. Saved as node.milestone / node.due.
+  3.23.0 2026-08-28  Tag filter hides non-matching cards and collapses the columns to the matches (was: dim).
+  3.22.1 2026-08-28  Perf: indexed edge lookups (large projects with ~1000 links render and lay out smoothly).
+  3.22.0 2026-08-28  A backlog card can't be placed on the board without an Intent (double-click, drag, or being
+                     linked): the Intent field is outlined red and focused instead.
+  3.21.3 2026-08-28  Done is only offered for the In-progress card (button and Done-list drop).
+  3.21.2 2026-08-28  Done is only offered for Ready cards (button hidden otherwise; Done-list drops ignore non-Ready cards).
+  3.21.1 2026-08-28  Shorter button labels: Done, Delete, + (tag), New (tag); "in progress" pin shortened to ▶ only.
+  3.21.0 2026-08-28  A card can't be marked done with an empty Record: the field is outlined red and focused instead (button and drop).
+  3.20.1 2026-08-28  Fix: dropping on an empty Done list did nothing (target measured after it collapsed).
+                     "Mark done" / "Reopen" button added to the task window footer.
+  3.20.0 2026-08-28  Board columns auto-sort: Ready by cards unblocked (desc), step columns by blocker count (desc),
+                     ties by name. Manual reorder within board columns removed; Backlog keeps manual order.
+  3.19.3 2026-08-28  Ready cards show how many cards they transitively unblock (bottom-right, ↳ N).
+  3.19.2 2026-08-28  Blocked cards always show their blocker count (bottom-right), regardless of description.
+  3.19.1 2026-08-28  Fix: write permission is requested once when a file is opened/saved; autosave only runs while the
+                     grant is held, otherwise the explicit Save button returns (no prompts while editing).
+  3.19.0 2026-08-28  Ctrl+C / Ctrl+V copy and paste selected cards (with links between them; works across projects
+                     via the system clipboard); Ctrl+D duplicates in place. Copies reset done/started/in-progress.
+  3.18.0 2026-08-28  Undo/redo (Ctrl+Z / Ctrl+Shift+Z or Ctrl+Y) for structural changes; delete confirms removed.
+                     Ready list ordered by what each card unblocks (longest chain, then count), shown as a suffix.
+                     Silent timestamps: created / started / done. Done list grouped by week (current open, older
+                     collapsed). With a file handle, changes autosave to the file; Save button and dirty dot hide.
+  3.17.1 2026-08-28  Tag highlight is now AND: a card must carry every selected tag.
+  3.17.0 2026-08-28  Selected sidebar tags both highlight matching cards on the board and apply to new tasks.
+  3.16.2 2026-08-28  Fix: a drag interrupted by pointer cancel / lost capture left the card off-board with a dangling
+                     arrow. Drags now always finalise or snap back; native drag/selection disabled on the board.
+  3.16.1 2026-08-28  Dropping a card onto Requires applies to every selected task, not just the open one.
+  3.16.0 2026-08-28  Ctrl/Cmd+Enter in the task window closes it and immediately creates the next task (chain entry).
+  3.15.1 2026-08-28  Ready and Done panes collapse via a chevron in their heading (remembered). "Ready now" → "Ready".
+  3.15.0 2026-08-28  Tags pane moved to the top of the sidebar; sidebar can be collapsed/expanded (button in header, remembered).
+  3.14.0 2026-08-28  Selected sidebar tags no longer highlight the board; they are applied to every new task instead.
+  3.13.0 2026-08-28  Tags pane in the sidebar: all project tags as chips. Click to highlight tagged cards (toggle,
+                     combinable), ✎ on hover to rename/recolour/delete, "+" to create without applying.
+  3.12.2 2026-08-28  Requires drop zone is always visible (fixed empty slot) so the window doesn't resize.
+  3.12.1 2026-08-28  Task window title bar removed; drag it from any non-interactive area. Close with Enter, Esc or a board click.
+  3.12.0 2026-08-28  Toggles (On board / Done / In progress) removed from the task window; state is set by drag and
+                     double-click only. Double-click a Done list entry to reopen it.
+  3.11.3 2026-08-28  Record placeholder shortened.
+  3.11.2 2026-08-28  Usability helper text removed throughout (toggle hints, empty-state prompts, drop-zone copy).
+  3.11.1 2026-08-28  Task window: Name (unlabelled), then Tags (unlabelled), then the rest; Requires helper text removed.
+  3.11.0 2026-08-28  Location field removed from tasks (dropped from saved data too).
+  3.10.0 2026-08-28  Tags: project-authored labels with colour (none predefined). Managed from a flyout in the task
+                     window — create, rename, recolour, delete, apply/remove. Cards show applied tags as colour bars;
+                     search also matches tag names. Saved in the project file (tags[], node.tags[]).
+  3.9.3  2026-08-28  Fix: dragged-card ghost is no longer clipped by the board when dragged over the sidebar.
+  3.9.2  2026-08-28  Name capitalised: Dependency Planner.
+  3.9.1  2026-08-28  Double-click on a backlog card places it in Ready; on a blocked card it does nothing (no message).
+  3.9.0  2026-08-28  Double-click toggles In progress (Ready cards only) instead of Done.
+  3.8.0  2026-08-28  Declutter: removed the command-bar "New task" box (Enter does it), Export doc, and Reset order
+                     (columns are automatic). Key legend folded behind a ? button. Rule from here: minimal chrome.
+  3.7.3  2026-08-28  Search bar: placeholder text and the empty-state prompt removed; result list only appears with matches.
+  3.7.2  2026-08-28  Search bar is draggable from anywhere on it (results stay clickable); grip strip removed.
+  3.7.1  2026-08-28  Search bar can be dragged by its edge/handle; position is remembered across sessions.
+  3.7.0  2026-08-28  In progress can only be set on a Ready card; it clears automatically if the card leaves Ready.
+  3.6.2  2026-08-28  Fix: In-progress toggle rendered as a block (field-label style overrode the switch layout).
+  3.6.1  2026-08-28  Fix: columns recompute on every change (marking done via toggle/double-click left stale columns).
+  3.6.0  2026-08-28  Done column removed from the board; done tasks are listed in the sidebar under "Done"
+                     (click to open, drop a card onto the list to finish it). Board is Backlog · Ready · steps out.
+  3.5.0  2026-08-28  Columns now measure remaining work: a card's column is the longest chain of *unfinished*
+                     prerequisites, so finishing everything in Ready promotes the next column. Done cards move to a
+                     Done column between Backlog and Ready; dragging across the Ready/Done boundary toggles done.
+  3.4.1  2026-08-28  Enter inside the task window closes it (Ctrl+Enter in text areas). Enter on the board still creates a task.
+  3.4.0  2026-08-28  Dependency arrows are drawn only for selected cards (both directions); the rest are hidden.
+  3.3.2  2026-08-28  Fix: dropping a backlog card onto Requires now moves both cards onto the board immediately.
+  3.3.1  2026-08-28  Fix: dragging a card no longer switches the open task window, so dropping onto Requires works.
+                     Dragged cards are drawn as a ghost above the window instead of behind it.
+  3.3.0  2026-08-28  In progress: exactly one task can be marked in progress (toggle in task window); it gets an
+                     accent halo on the board and sits at the top of the Ready panel. Saved in the project file.
+                     Ready panel empty-state now distinguishes "nothing on the board yet" from "all blocked or done".
+  3.2.0  2026-08-28  Multi-select: Shift+click selects a range (board order), Ctrl/Cmd+click toggles. Delete and
+                     backlog/board drags apply to the whole selection. Requirements are now added by dragging
+                     cards onto the Requires slot in the task window (Shift+click linking removed).
+  3.1.0  2026-08-28  Space opens a Spotlight-style search over name, intent, record and location; matches are
+                     highlighted on the board with the matched text marked, others dimmed. Enter opens a result.
+  3.0.1  2026-08-28  Task window remembers its dragged position across tasks and sessions.
+  3.0.0  2026-08-28  Single-window layout: task editor is a floating window over the board; right sidebar removed,
+                     "Ready now" moved to a left sidebar. Import/Export replaced by New / Open / Save project
+                     (one JSON file; Save writes back in place where the browser allows). Scrollbars on the board;
+                     wheel scrolls, Ctrl+wheel zooms. Enter no longer fires on key repeat.
+  2.0.0  2026-08-28  Removed Vision tab, pillars, and the layer tag/filter. Kept Intent/Record/Location and doc export.
+  1.0.0  2026-08-28  First versioned release.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BLOCKER 3.41.1</title>
+<style>
+  :root{
+    --base:#202020; --layer:#272727; --layer2:#2c2c2c; --card:#333333; --card-hover:#3a3a3a;
+    --stroke:rgba(255,255,255,.08); --stroke2:rgba(255,255,255,.16);
+    --text:#ffffff; --text2:rgba(255,255,255,.78); --text3:rgba(255,255,255,.55); --text4:rgba(255,255,255,.36);
+    --accent:#60cdff; --accent-dim:rgba(96,205,255,.12);
+    --done:#6ccb5f; --danger:#ff99a4;
+    --font:"Segoe UI Variable","Segoe UI",system-ui,-apple-system,sans-serif;
+    --mono:"Cascadia Mono","Cascadia Code",Consolas,ui-monospace,monospace;
+    --r:4px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--base);color:var(--text);font:14px/20px var(--font);overflow:hidden}
+  #app{display:grid;grid-template-rows:48px 1fr;grid-template-columns:260px 1fr;height:100%}
+  aside{grid-column:1;grid-row:2} #stage{grid-column:2;grid-row:2}
+  #app.nosb{grid-template-columns:0 1fr} #app.nosb aside{display:none}
+  header{grid-column:1/3;display:flex;align-items:center;gap:6px;padding:0 12px;background:var(--layer);border-bottom:1px solid var(--stroke)}
+  header .title{font-size:12px;letter-spacing:.08em;font-weight:600;color:var(--text2);margin-right:8px;display:flex;align-items:center;gap:10px;white-space:nowrap}
+  header .title svg{opacity:.8}
+  #proj{font-size:14px;font-weight:600;color:var(--text);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #dirty{color:var(--accent);display:none} #dirty.on{display:inline}
+  .cmd{display:flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:var(--r);border:1px solid transparent;background:transparent;color:var(--text);font:14px var(--font);cursor:pointer;white-space:nowrap}
+  .cmd:hover{background:rgba(255,255,255,.06)} .cmd:active{background:rgba(255,255,255,.03);color:var(--text3)}
+  .cmd:focus-visible{outline:2px solid var(--text);outline-offset:1px}
+  .cmd svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  .cmd.danger:hover{color:var(--danger)}
+  .cmd.tab{border-bottom:2px solid transparent;border-radius:var(--r) var(--r) 0 0} .cmd.tab.on{border-bottom-color:var(--accent);background:rgba(255,255,255,.05)}
+  .sep{width:1px;height:20px;background:var(--stroke2);margin:0 4px}
+  .spacer{flex:1}
+  #stat{font-size:12px;color:var(--text3);font-variant-numeric:tabular-nums;white-space:nowrap} #stat #zoom{cursor:pointer;padding:2px 4px;border-radius:3px} #stat #zoom:hover{background:rgba(255,255,255,.08);color:var(--text)}
+  .tb{width:100%;background:rgba(255,255,255,.06);border:1px solid var(--stroke);border-bottom:1px solid rgba(255,255,255,.55);color:var(--text);padding:6px 10px;border-radius:var(--r);font:14px/20px var(--font);outline:none;resize:vertical}
+  .tb:hover{background:rgba(255,255,255,.08)}
+  .tb:focus{background:rgba(30,30,30,.9);border-bottom:2px solid var(--accent);padding-bottom:5px}
+  .tb::placeholder{color:var(--text4)}
+  input[type=date].tb{color-scheme:dark}
+  .tb.err,.tb.err:focus{border-color:var(--danger);border-bottom:2px solid var(--danger);padding-bottom:5px;background:rgba(255,153,164,.06)}
+    /* left sidebar */
+  aside{background:var(--layer);border-right:1px solid var(--stroke);overflow:auto;display:flex;flex-direction:column}
+  .pane{padding:16px 16px 8px}
+  .pane h2{font:600 14px/20px var(--font);margin:0 0 12px}
+  .pane h2.fold{cursor:pointer;user-select:none;display:flex;align-items:center;gap:6px}
+  .pane h2.fold .chev{margin-left:auto;width:8px;height:8px;border-right:1.5px solid var(--text3);border-bottom:1.5px solid var(--text3);transform:rotate(45deg) translate(-2px,-2px);transition:transform .12s}
+  .pane.closed h2.fold{margin-bottom:0} .pane.closed h2.fold .chev{transform:rotate(-45deg) translate(0,0)} .pane.closed .list{display:none!important}
+  .list{list-style:none;margin:0;padding:0;border:1px solid var(--stroke);border-radius:var(--r);background:var(--layer2);overflow:hidden}
+  .list li{display:flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;border-bottom:1px solid var(--stroke);font-size:13px;min-height:34px}
+  .list li:last-child{border-bottom:0}
+  .list li.item{cursor:pointer} .list li.item:hover{background:rgba(255,255,255,.05)}
+  .list li .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .list li .ok{color:var(--done);font-size:12px;width:12px}
+  .list li .x{border:0;background:transparent;color:var(--text3);width:24px;height:24px;border-radius:var(--r);cursor:pointer;font-size:16px;line-height:1}
+  .list li .x:hover{background:rgba(255,255,255,.08);color:var(--text)}
+  .list li.muted{color:var(--text4);font-size:12px}
+  .list li.ready{border-left:3px solid var(--accent);padding-left:9px}
+  .list li.prog{background:var(--accent-dim)}
+  #calFocus{display:flex;align-items:center;gap:6px;height:30px;margin:10px 0 2px;padding:0 6px 0 10px;border-radius:4px;background:var(--accent-dim);border-left:3px solid var(--accent);font-size:12px;visibility:hidden} #calFocus.on{visibility:visible} #calFocus .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} #calFocus .x{border:0;background:none;color:var(--text3);cursor:pointer;font-size:16px;line-height:1;width:22px;height:22px;border-radius:var(--r)} #calFocus .x:hover{background:rgba(255,255,255,.08);color:var(--text)}
+  #calHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:13px}
+  #calHead button{border:0;background:none;color:var(--text3);font-size:16px;width:24px;height:24px;border-radius:var(--r);cursor:pointer} #calHead button:hover{background:rgba(255,255,255,.08);color:var(--text)}
+  #calGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+  #calGrid .dh{font-size:10px;color:var(--text4);text-align:center;padding:2px 0}
+  #calGrid .d{position:relative;height:30px;border-radius:3px;font-size:11px;color:var(--text3);padding:3px 0 0 4px;cursor:pointer;user-select:none}
+  #calGrid .d:hover{background:rgba(255,255,255,.06)} #calGrid .d.out{color:var(--text4);opacity:.5} #calGrid .d.today{box-shadow:inset 0 0 0 1px var(--stroke2)}
+  #calGrid .d.has{color:var(--text)} #calGrid .d.focus{background:var(--accent-dim);box-shadow:inset 0 0 0 1px var(--accent)}
+  #calGrid .d.drop{background:var(--accent-dim);box-shadow:inset 0 0 0 1px var(--accent)}
+  #calGrid .dots{position:absolute;left:4px;bottom:3px;display:flex;gap:2px} #calGrid .dots i{width:5px;height:5px;border-radius:50%;background:var(--accent)} #calGrid .dots i.late{background:var(--danger)}
+  #calMs{list-style:none;margin:8px 0 0;padding:0} #calMs li{display:flex;gap:8px;align-items:baseline;font-size:12px;padding:4px 4px;border-radius:3px;cursor:pointer} #calMs li:hover{background:rgba(255,255,255,.05)} #calMs li.on{background:var(--accent-dim)}
+  #calMs li{flex-wrap:wrap} #calMs li.done .n{color:var(--text3);text-decoration:line-through} #calMs .ed{color:var(--text4);display:none;cursor:pointer} #calMs li:hover .ed{display:inline} #calMs li.drop{background:var(--accent-dim);box-shadow:inset 0 0 0 1px var(--accent)}
+  .msed{width:100%;padding:6px 0 2px} .msed .tb{margin-bottom:6px} .msed .parts{list-style:none;margin:0 0 6px;padding:0} .msed .parts li{display:flex;align-items:center;gap:6px;font-size:12px;padding:2px 0;color:var(--text2)} .msed .parts .n{flex:1;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .msed .parts .x{border:0;background:none;color:var(--text4);cursor:pointer} .msed .parts .x:hover{color:var(--danger)} .msed .row{display:flex;gap:6px;justify-content:flex-end} .msed .cmd{height:26px;font-size:12px}
+  #calMs .dd{color:var(--text4);width:24px;text-align:right;flex:none} #calMs .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} #calMs .w{color:var(--text4);font-size:11px}
+  kbd{font:11px var(--mono);color:var(--text2);background:rgba(255,255,255,.08);border:1px solid var(--stroke);border-radius:3px;padding:0 5px}
+  .help{padding:12px 16px;font-size:12px;color:var(--text3);line-height:22px;border-top:1px solid var(--stroke)}
+  /* board */
+  #stage{position:relative;overflow:hidden;background:var(--base)}
+  #dir,#vis{position:absolute;inset:0;overflow:auto;padding:24px 28px 24px 52px;background:var(--base)} #dir[hidden],#vis[hidden]{display:none}
+  #vis{max-width:760px} #vis h2{font:600 14px var(--font);margin:22px 0 10px;color:var(--text2)} #vis h2.doctrine{font-size:18px;color:var(--text);margin-top:28px}
+  #vis .stmt{font:400 20px/1.45 var(--font);white-space:pre-wrap;color:var(--text);min-height:60px} #vis .stmt.empty{color:var(--text4)}
+  #vis textarea.tb{font:400 18px/1.45 var(--font);min-height:120px}
+  #vis .pillar{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--stroke)} #vis .pillar .pn{font-weight:600;flex:0 0 180px;overflow-wrap:anywhere} #vis .pillar .pd{color:var(--text3);flex:1} #vis .pillar .pd .rej{padding:2px 0 2px 16px;text-indent:-16px} #vis .pillar .pd .rej::before{content:'\2013\00a0';color:var(--text4)} #vis .pillar .pc{font-size:12px;color:var(--text4);white-space:nowrap}
+  #vis .pillar .tb{font-size:14px} #vis .pillar .x{border:0;background:none;color:var(--text4);cursor:pointer;font-size:16px} #vis .pillar .x:hover{color:var(--danger)}
+  #vis .row{display:flex;gap:8px;margin-top:14px} #vis .cmd.primary{background:var(--accent);color:#000} #vis .cmd.primary:hover{background:#7ad5ff}
+  #vis .log{margin-top:28px;font-size:12px;color:var(--text3)} #vis .log li{padding:6px 0;border-bottom:1px solid var(--stroke)} #vis .log ul{list-style:none;margin:6px 0 0;padding:0} #vis .log .old{color:var(--text4);white-space:pre-wrap;margin-top:3px}
+  #dir .pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;background:rgba(255,255,255,.07);color:var(--text2);margin-right:4px;white-space:nowrap} #dir .orphan{color:var(--danger)}
+  .pillarpick{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px} .pillarpick .pp{font-size:12px;padding:3px 10px;border-radius:12px;border:1px solid var(--stroke2);color:var(--text3);cursor:pointer;user-select:none} .pillarpick .pp.on{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+  #dir h2{font:600 14px var(--font);margin:0 0 10px;color:var(--text2)} #dir .kpis{display:flex;gap:28px;margin-bottom:24px;flex-wrap:wrap}
+  #dir .kpi{min-width:120px} #dir .kpi .v{font:600 26px/1.1 var(--font)} #dir .kpi .l{font-size:12px;color:var(--text3);margin-top:2px}
+  #dir table{border-collapse:collapse;width:100%;font-size:13px} #dir th{text-align:left;font-weight:500;color:var(--text3);font-size:12px;padding:6px 10px;border-bottom:1px solid var(--stroke2);cursor:pointer;user-select:none;white-space:nowrap} #dir th:hover{color:var(--text)} #dir th .ar{display:inline-block;width:10px;color:var(--text4);margin-left:3px} #dir th.on{color:var(--text)} #dir th.on .ar{color:var(--accent)}
+  #dir td{padding:8px 10px;border-bottom:1px solid var(--stroke);vertical-align:top} #dir tr.ms{cursor:pointer} #dir tr.ms:hover td{background:rgba(255,255,255,.03)} #dir tr.on td{background:var(--accent-dim)}
+  #dir td.n{font-weight:600} #dir .st{font-size:11px;padding:1px 7px;border-radius:9px;border:1px solid var(--stroke2);color:var(--text2);white-space:nowrap}
+  #dir .st.late,#dir .st.unreachable{color:var(--danger);border-color:var(--danger)} #dir .st.behind{color:#f7c948;border-color:#f7c948} #dir .st.on{color:var(--done);border-color:var(--done)} #dir .st.approved,#dir .st.complete{color:var(--accent);border-color:var(--accent)} #dir .st.ready{color:var(--done);border-color:var(--done);background:rgba(108,203,95,.1)}
+  .act{border:0;background:none;color:var(--accent);cursor:pointer;font:12px var(--font);padding:0 4px;white-space:nowrap} .act:hover{text-decoration:underline}
+  #dir .act{border:0;background:none;color:var(--accent);cursor:pointer;font:12px var(--font);padding:0 4px} #dir .act:hover{text-decoration:underline} #dir .act.warn{color:var(--text4)} #dir .act.warn:hover{color:var(--danger)}
+  #dir textarea.rec{width:100%;min-width:260px;font:12px/1.4 var(--font);min-height:54px}
+  #dir td.rec{color:var(--text3);font-size:12px;max-width:320px;white-space:pre-wrap}
+  #dir tr.open td{background:rgba(255,255,255,.03)} #dir tr.exp td{padding:0 10px 14px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--stroke2)}
+  #dir .expbox{padding:10px 8px 0} #dir .erow{display:flex;gap:10px;align-items:center;margin-bottom:12px} #dir .ename{flex:0 0 320px;font-weight:600} #dir .edate{width:auto;color-scheme:dark}
+  #dir .ecols{display:grid;grid-template-columns:1fr 1fr;gap:24px} #dir .elabel{font-size:12px;color:var(--text3);margin:8px 0 6px} #dir .elabel:first-child{margin-top:0}
+  #dir .parts{list-style:none;margin:0;padding:0;max-height:260px;overflow:auto} #dir .parts li{display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;color:var(--text2)} #dir .parts .n{flex:1;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} #dir .parts .n.done{color:var(--text4);text-decoration:line-through} #dir .parts .x{border:0;background:none;color:var(--text4);cursor:pointer} #dir .parts .x:hover{color:var(--danger)} #dir .parts .muted{font-size:12px} #dir .muted{color:var(--text4)} #dir td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+  #dir .log{margin-top:24px;font-size:12px;color:var(--text3)} #dir .log li{padding:3px 0} #dir .log .pillarpick{margin-bottom:10px} #dir .log li.divider{color:var(--accent);font-size:11px;letter-spacing:.06em;text-transform:uppercase;border-top:1px dashed var(--accent);margin:6px 0 4px;padding-top:4px} #dir .log ul{list-style:none;margin:6px 0 0;padding:0}
+  canvas{display:block;width:100%;height:100%;cursor:default;touch-action:none;user-select:none;-webkit-user-drag:none}
+  canvas.drag{cursor:grabbing}
+  #msg{position:absolute;left:12px;bottom:12px;font-size:12px;color:var(--danger);background:var(--layer);border:1px solid var(--stroke2);border-radius:var(--r);padding:6px 10px;display:none}
+  #msg.on{display:block}
+  #ghost{position:fixed;pointer-events:none;display:none;z-index:20;width:220px;height:56px;border-radius:4px;background:var(--card-hover);border:1px solid var(--accent);box-shadow:0 10px 30px rgba(0,0,0,.6);padding:8px 14px;transform-origin:top left}
+  #ghost.on{display:block}
+  #ghost .n{font:600 13px var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #ghost .s{font:12px var(--font);color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #ghost .b{position:absolute;top:-8px;right:-8px;background:var(--accent);color:#000;font:600 11px var(--font);border-radius:9px;padding:0 6px;line-height:18px}
+  /* floating task window */
+  #win{position:absolute;width:340px;background:var(--layer);border:1px solid var(--stroke2);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.4);display:none;flex-direction:column;max-height:calc(100% - 24px)}
+  #win.on{display:flex}
+  #win .bar{display:flex;align-items:center;height:36px;padding:0 4px 0 14px;border-bottom:1px solid var(--stroke);cursor:move;user-select:none;border-radius:8px 8px 0 0;background:var(--layer2)}
+  #win .bar .t{flex:1;font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #win .bar button{width:36px;height:28px;border:0;background:none;color:var(--text2);font-size:14px;cursor:pointer;border-radius:var(--r)}
+  #win .bar button:hover{background:rgba(255,255,255,.08)}
+  #win{cursor:move} #win .tb,#win .chip,#win .list li,#win button,#win #tagPop{cursor:auto} #win .tb{cursor:text} #win .chip,#win button,#win .list li.item{cursor:pointer}
+  #win .body{padding:14px 16px 6px;overflow:auto}
+  .field{margin-bottom:12px}
+  .field>label:not(.toggle){display:block;font-size:12px;color:var(--text3);margin-bottom:6px}
+  .lay{font:600 10px var(--font);letter-spacing:.06em;color:var(--text4)}
+  .hint{font-size:12px;color:var(--text4);margin:6px 0 0}
+  #depList{min-height:36px} #depList.empty{border-style:dashed;background:transparent}
+  #doneList.drop,#depList.drop{display:block!important;min-height:36px}
+  #doneList.drop{outline:2px dashed var(--done);outline-offset:2px;background:rgba(108,203,95,.1)}
+  .list li.wk{background:rgba(255,255,255,.03);font-size:12px;color:var(--text3);cursor:pointer;min-height:28px;padding-top:3px;padding-bottom:3px} .list li.wk .w{font-size:11px;color:var(--text4)} .list li.wk.open{color:var(--text2)}
+  .list li.done .n{color:var(--text3);text-decoration:line-through}
+  #depList.drop{outline:2px dashed var(--accent);outline-offset:2px;background:var(--accent-dim)}
+  #selCount{font-size:12px;color:var(--accent);margin-left:8px}
+  /* tags */
+  .tagrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .chip{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:4px;font:600 12px var(--font);color:#111;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chip.side{cursor:pointer;position:relative;padding-right:10px;opacity:.85} .chip.side:hover{opacity:1} .chip.side.on{opacity:1;box-shadow:0 0 0 2px var(--text)}
+  .chip.side .ed{display:none;margin-left:6px;font-weight:400} .chip.side:hover .ed{display:inline}
+  #sideTagEdit .tedit{border-top:0;padding-top:10px}
+  .chip.add{background:rgba(255,255,255,.08);color:var(--text2);cursor:pointer;font-weight:400;padding:0 9px}
+  .chip.add:hover{background:rgba(255,255,255,.12)}
+  #tagPop{position:absolute;left:16px;right:16px;background:var(--layer2);border:1px solid var(--stroke2);border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.55);padding:8px;display:none;z-index:3}
+  #tagPop.on{display:block}
+  #tagPop .hd{display:flex;align-items:center;justify-content:space-between;padding:2px 4px 8px;font-size:12px;color:var(--text3)}
+  #tagPop .hd button{border:0;background:none;color:var(--text3);cursor:pointer;font-size:14px;width:24px;height:24px;border-radius:var(--r)} #tagPop .hd button:hover{background:rgba(255,255,255,.08);color:var(--text)}
+  .trow{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+  .trow .pill{flex:1;height:30px;border-radius:4px;display:flex;align-items:center;padding:0 10px;font:600 13px var(--font);color:#111;cursor:pointer;gap:8px;min-width:0}
+  .trow .pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .trow .pill .ck{margin-left:auto;font-size:13px;opacity:0} .trow .pill.on .ck{opacity:1}
+  .trow .pill:hover{filter:brightness(1.1)}
+  .trow .ed{width:30px;height:30px;border:0;background:none;color:var(--text3);cursor:pointer;border-radius:var(--r)} .trow .ed:hover{background:rgba(255,255,255,.08);color:var(--text)}
+  .tedit{padding:6px 4px 2px;border-top:1px solid var(--stroke);margin-top:4px}
+  .tedit .tb{margin-bottom:8px}
+  #visPillars .tedit-row{padding:10px 0;border-bottom:1px solid var(--stroke)} #visPillars .th{display:flex;gap:6px;margin-bottom:6px} #visPillars .th .tb{flex:1} #visPillars .rejrow{display:flex;gap:6px;margin:0 0 6px 20px} #visPillars .rejrow .tb{flex:1} #visPillars .x{border:0;background:none;color:var(--text4);cursor:pointer;font-size:16px} #visPillars .x:hover{color:var(--danger)}
+  .sw8{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .sw8 button{width:28px;height:22px;border-radius:4px;border:2px solid transparent;cursor:pointer;padding:0}
+  .sw8 button.on{border-color:#fff}
+  .tedit .row{display:flex;gap:6px;justify-content:flex-end}
+  .tedit .cmd{height:28px;font-size:13px}
+  .tedit .cmd.primary{background:var(--accent);color:#000} .tedit .cmd.primary:hover{background:#7ad5ff}
+  .tnew{width:100%;text-align:center;justify-content:center;height:30px;margin-top:2px;background:rgba(255,255,255,.06)}
+  #win .foot{display:flex;justify-content:flex-end;gap:4px;padding:8px 12px 10px;border-top:1px solid var(--stroke)}
+  /* search overlay */
+  #search{position:absolute;inset:0;display:none;background:rgba(0,0,0,.35);z-index:5}
+  #search.on{display:flex}
+  #searchBox{position:absolute;width:560px;max-width:calc(100% - 40px);background:var(--layer);border:1px solid var(--stroke2);border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.6);overflow:hidden}
+  #searchBox{cursor:move} #searchIn{cursor:text} #searchRes li{cursor:pointer}
+  #searchBox .sin{display:flex;align-items:center;gap:12px;padding:0 18px} #searchBox .sin svg{width:22px;height:22px;fill:none;stroke:var(--text3);stroke-width:1.8;stroke-linecap:round;flex:none}
+  #searchIn{flex:1;border:0;background:transparent;color:var(--text);font:20px/28px var(--font);padding:14px 0;outline:none}
+  #searchIn::placeholder{color:var(--text4)}
+  #searchRes{list-style:none;margin:0;padding:6px;border-top:1px solid var(--stroke);max-height:50vh;overflow:auto}
+  #searchRes li{padding:8px 12px;border-radius:var(--r);cursor:pointer;display:flex;gap:10px;align-items:baseline}
+  #searchRes li.cur,#searchRes li:hover{background:rgba(255,255,255,.07)}
+  #searchRes .n{font-weight:600;white-space:nowrap}
+  #searchRes .c{color:var(--text3);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+  #searchRes .w{color:var(--text4);font-size:11px;white-space:nowrap}
+  #searchRes mark{background:rgba(96,205,255,.28);color:var(--text);border-radius:2px;padding:0 1px}
+  #searchRes li.muted{color:var(--text4);font-size:12px;cursor:default}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="title">BLOCKER <span id="ver" style="color:var(--text4)"></span></div>
+    <div class="sep"></div>
+    <span id="proj"></span><span id="dirty" title="Unsaved changes">●</span>
+    <div class="sep"></div>
+    <button class="cmd tab" id="visBtn" title="Vision"><svg viewBox="0 0 16 16"><path d="M8 3l1.6 3.4L13 7l-2.5 2.4.6 3.6L8 11.3 4.9 13l.6-3.6L3 7l3.4-.6z"/></svg>Vision</button>
+    <button class="cmd tab" id="dirBtn" title="Direction"><svg viewBox="0 0 16 16"><path d="M2 12l4-5 3 3 5-7M2 14h12"/></svg>Direction<span id="dirBadge" style="font-size:11px;color:var(--accent);margin-left:2px"></span></button>
+    <button class="cmd tab on" id="desBtn" title="Design"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="4" height="12" rx="1"/><rect x="8" y="2" width="4" height="7" rx="1"/></svg>Design</button>
+    <div class="sep"></div>
+    <button class="cmd" id="reopenBtn" hidden style="color:var(--accent)"><svg viewBox="0 0 16 16"><path d="M1.5 3.5h4l1.5 1.5h7.5v8h-13z"/></svg><span></span></button>
+    <button class="cmd" id="newBtn" title="New project"><svg viewBox="0 0 16 16"><path d="M4 1.5h5l3 3v10H4zM9 1.5v3h3"/></svg>New</button>
+    <button class="cmd" id="openBtn" title="Open project (Ctrl+O)"><svg viewBox="0 0 16 16"><path d="M1.5 3.5h4l1.5 1.5h7.5v8h-13z"/></svg>Open</button>
+    <button class="cmd" id="saveBtn" title="Save project (Ctrl+S)"><svg viewBox="0 0 16 16"><path d="M2.5 2.5h9l2 2v9h-11zM5 2.5v4h5v-4M4.5 13.5v-5h7v5"/></svg>Save</button>
+    <button class="cmd" id="saveAsBtn" title="Duplicate to a new file (Ctrl+Shift+S)"><svg viewBox="0 0 16 16"><rect x="5.5" y="5.5" width="8" height="8" rx="1"/><path d="M10.5 5.5v-3h-8v8h3"/></svg>Duplicate</button>
+    <input id="file" type="file" accept="application/json,.json" hidden>
+    <div class="spacer"></div>
+    <span id="stat"></span>
+  </header>
+
+  <aside>
+    <div class="pane">
+      <h2>Tags</h2>
+      <div class="tagrow" id="sideTags"></div>
+      <div id="sideTagEdit"></div>
+    </div>
+    <div class="pane closed">
+      <h2 class="fold" data-pane="ms">Milestones<span class="chev"></span></h2>
+      <div class="list" id="msList" style="padding:8px">
+        <div id="calHead"><button id="calPrev">‹</button><span id="calTitle"></span><button id="calNext">›</button></div>
+        <div id="calGrid"></div>
+        <div id="calFocus"><span class="n"></span><button class="x" title="Clear">×</button></div>
+        <ul id="calMs"></ul>
+      </div>
+    </div>
+    <div class="pane closed">
+      <h2 class="fold" data-pane="ready">Ready<span class="chev"></span></h2>
+      <ul class="list" id="readyList"></ul>
+    </div>
+    <div class="pane closed">
+      <h2 class="fold" data-pane="done">Done <span id="doneCount" style="color:var(--text4);font-weight:400"></span><span class="chev"></span></h2>
+      <ul class="list" id="doneList"></ul>
+    </div>
+    <button class="cmd" id="helpBtn" title="Keys" style="margin:auto 8px 8px auto;width:32px;padding:0;justify-content:center;color:var(--text4)">?</button>
+    <div class="help" id="help" hidden>
+      Only <b>Ready</b> work can be started — a card is Ready when all its requirements are done, a milestone when all its parts are Ready<br>
+      <kbd>Enter</kbd> new task · in a window: finish &nbsp; <kbd>Ctrl</kbd>+<kbd>Enter</kbd> finish and create next<br>
+      <kbd>Click</kbd> open task &nbsp; <kbd>Shift</kbd>+click range &nbsp; <kbd>Ctrl</kbd>+click toggle<br>
+      <kbd>Drag</kbd> move Backlog ↔ board, drop onto <i>Requires</i> or <i>Done</i> (board columns auto-sort)<br>
+      Arrows show for selected cards only<br>
+      <kbd>Dbl-click</kbd> backlog → Ready · Ready (board or list) → in progress · Done list → reopen &nbsp; <kbd>Del</kbd> remove<br>
+      <kbd>◇</kbd> then a calendar day: add task to that day's milestone (or create one) &nbsp; drop cards on a day likewise<br>
+      Drag a milestone entry onto a day to move it &nbsp; click a day or entry to focus, click again to clear<br>
+      <kbd>Space</kbd> search all tasks<br>
+      <kbd>Ctrl</kbd>+<kbd>C</kbd>/<kbd>V</kbd> copy/paste cards &nbsp; <kbd>Ctrl</kbd>+<kbd>D</kbd> duplicate<br>
+      <kbd>Ctrl</kbd>+<kbd>Z</kbd> undo &nbsp; <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redo<br>
+      <kbd>Wheel</kbd> scroll &nbsp; <kbd>Ctrl</kbd>+wheel zoom &nbsp; drag empty space to pan
+    </div>
+  </aside>
+
+  <div id="stage">
+    <button class="cmd" id="sideBtn" title="Sidebar" style="position:absolute;left:8px;top:8px;width:32px;padding:0;justify-content:center;z-index:4;color:var(--text3);background:var(--layer);border:1px solid var(--stroke)"><svg viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M6 3v10"/></svg></button>
+    <canvas id="cv"></canvas>
+    <div id="dir" hidden></div>
+    <div id="vis" hidden></div>
+    <div id="msg"></div>
+    <div id="search"><div id="searchBox"><div class="sin"><svg viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14"/></svg><input id="searchIn" type="text" autocomplete="off" spellcheck="false"></div><ul id="searchRes"></ul></div></div>
+    <div id="win">
+      <div class="body">
+        <div class="field" style="display:flex;gap:8px;align-items:center"><input id="nameIn" class="tb" type="text" autocomplete="off" aria-label="Name" style="font-weight:600"><button id="msBtn" class="cmd" title="Milestones" style="width:32px;padding:0;justify-content:center;font-size:15px">◇</button><span id="selCount"></span></div>
+        
+        <div class="field" id="reviewRow" hidden style="display:flex;gap:10px;align-items:center;background:rgba(247,201,72,.08);border-left:3px solid #f7c948;padding:6px 10px;border-radius:4px;font-size:12px"><span id="reviewTxt" style="flex:1"></span><button class="act" id="reviewedBtn" style="color:#f7c948">Reviewed</button></div>
+        <div class="field" style="position:relative"><div class="tagrow" id="tagRow"></div>
+          <div id="tagPop"><div class="hd"><span>Tags</span><button id="tagPopClose" title="Close">✕</button></div><div id="tagList"></div><div id="tagEdit"></div></div>
+        </div>
+        <div class="field"><label for="descIn">Intent <span class="lay">· PREDICTIVE</span></label><textarea id="descIn" class="tb" rows="3" placeholder="What this should be, before it exists."></textarea></div>
+        <div class="field"><label for="recIn">Record <span class="lay">· DESCRIPTIVE</span></label><textarea id="recIn" class="tb" rows="4" placeholder="What actually exists."></textarea></div>
+        <div class="field"><label>Requires</label><ul class="list" id="depList"></ul></div>
+      </div>
+      <div class="foot"><button class="cmd" id="startBtn"><svg viewBox="0 0 16 16"><path d="M5 3l8 5-8 5z"/></svg>Start</button><button class="cmd" id="doneBtn"><svg viewBox="0 0 16 16"><path d="M3 8.5l3 3 7-7"/></svg><span>Done</span></button><button class="cmd" id="stopBtn" style="margin-right:auto"><svg viewBox="0 0 16 16"><rect x="4" y="4" width="8" height="8" rx="1"/></svg>Stop</button><button class="cmd danger" id="delBtn" title="Delete selected (Del)"><svg viewBox="0 0 16 16"><path d="M3 4h10M6 4V2.5h4V4M4.5 4l.7 9h5.6l.7-9M6.5 7v4M9.5 7v4"/></svg>Delete</button></div>
+    </div>
+  </div>
+</div>
+<div id="ghost"><div class="n"></div><div class="s"></div><div class="b"></div></div>
+
+<script>
+const VERSION = '3.41.1';
+// ---------- state ----------
+const blank = () => ({ name: 'Untitled project', nodes: [], edges: [], inProgress: null, tags: [], milestones: [], vision: { statement: '', pillars: [], history: [] }, events: [], lastSeen: null, reviews: [] });
+let S = blank();               // node {id,name,desc,record,tags,done,placed,x,y,col,row}; edge {from,to}: `to` requires `from`
+let query = '', searchHits = new Map(), activeTags = new Set(); // activeTags: applied to new tasks // id -> match info while search is open
+let selected = new Set(), anchor = null;
+let sel = null, cam = { x: 0, y: 0, z: 1 }, dirty = false, fileHandle = null, fileName = null;
+const STORE = 'depplan:v3';
+let saveTimer = null;
+const $ = id => document.getElementById(id);
+
+function migrate(j) {
+  const P = { name: j.name || j.project?.name || 'Untitled project', nodes: j.nodes || [], edges: j.edges || [], inProgress: j.inProgress || null, tags: Array.isArray(j.tags) ? j.tags : [], milestones: Array.isArray(j.milestones) ? j.milestones : [], vision: j.vision && typeof j.vision === 'object' ? j.vision : { statement: '', pillars: [], history: [] } };
+  P.vision.statement ??= ''; P.vision.pillars ??= []; P.vision.history ??= []; P.events = Array.isArray(j.events) ? j.events : []; P.lastSeen = j.lastSeen || null; P.reviews = Array.isArray(j.reviews) ? j.reviews : [];
+  if (!P.nodes.some(n => n.id === P.inProgress)) P.inProgress = null;
+  // legacy: milestone cards (3.24–3.25) become milestones; their direct requirements become parts
+  const legacy = P.nodes.filter(n => n.milestone);
+  for (const n of legacy) { P.milestones.push({ id: 'm' + n.id, name: n.name, due: n.due || null, parts: P.edges.filter(e => e.to === n.id).map(e => e.from) }); }
+  if (legacy.length) { const ids = new Set(legacy.map(n => n.id)); P.nodes = P.nodes.filter(n => !ids.has(n.id)); P.edges = P.edges.filter(e => !ids.has(e.from) && !ids.has(e.to)); }
+  for (const m of P.milestones) { m.parts = (m.parts || []).filter(id => P.nodes.some(n => n.id === id)); m.due ??= null; m.history ??= (m.due ? [{ at: null, due: m.due }] : []); m.record ??= ''; m.closedAt ??= null; m.pillars = (m.pillars || []).filter(id => P.vision.pillars.some(p => p.id === id)); m.reviewedAt ??= null; }
+  for (const p of P.vision.pillars) { if (!Array.isArray(p.rejects)) p.rejects = p.desc && p.desc.trim() ? [p.desc.trim()] : []; delete p.desc; }
+  for (const n of P.nodes) { delete n.milestone; delete n.due; n.desc ??= ''; n.placed ??= true; n.record ??= ''; n.created ??= null; n.started ??= null; n.doneAt ??= null; n.readyAt ??= null; n.reviewedAt ??= null; delete n.location; n.tags = (n.tags || []).filter(t => P.tags.some(g => g.id === t)); delete n.layer; delete n.pillars; }
+  return P;
+}
+// ---------- last file (IndexedDB holds the handle; window.storage can't) ----------
+function idb() { return new Promise((res, rej) => { const r = indexedDB.open('blocker', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+async function idbSet(k, v) { try { const db = await idb(); await new Promise((res, rej) => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = res; t.onerror = () => rej(t.error); }); } catch (e) {} }
+async function idbGet(k) { try { const db = await idb(); return await new Promise((res, rej) => { const t = db.transaction('kv').objectStore('kv').get(k); t.onsuccess = () => res(t.result); t.onerror = () => rej(t.error); }); } catch (e) { return null; } }
+function rememberHandle(h) { if (h) idbSet('lastHandle', h); }
+async function reopenLast() { // returns true if the last file was loaded
+  const h = await idbGet('lastHandle'); if (!h) return false;
+  try {
+    const p = await h.queryPermission({ mode: 'readwrite' });
+    if (p === 'granted') { canAutosave = true; await loadFile(await h.getFile(), h); return true; }
+    const b = $('reopenBtn'); b.hidden = false; b.querySelector('span').textContent = 'Reopen ' + h.name;
+    b.onclick = async () => { b.hidden = true; if (await grantWrite(h)) await loadFile(await h.getFile(), h); };
+  } catch (e) {}
+  return false;
+}
+async function load() {
+  if (await reopenLast()) return;
+  try { const r = await window.storage.get(STORE, false); if (r && r.value) { const j = JSON.parse(r.value); S = migrate(j); fileName = j._fileName || null; dirty = !!j._dirty; } }
+  catch (e) { try { const r = await window.storage.get('depplan:v1', false); if (r && r.value) { S = migrate(JSON.parse(r.value)); dirty = true; } } catch (e2) {} }
+  layout(); startSession(); resetHistory(); render(); refreshReady(); refreshHeader(); renderSideTags(); refreshBadge();
+}
+function autosave() { // session persistence only; the project file is the source of truth
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => { try { await window.storage.set(STORE, JSON.stringify({ ...S, _fileName: fileName, _dirty: dirty }), false); } catch (e) {} }, 300);
+}
+let fileTimer = null, canAutosave = false;
+async function grantWrite(h) { // ask once, at open time; remember whether the grant sticks
+  try { canAutosave = (await h.queryPermission({ mode: 'readwrite' })) === 'granted' || (await h.requestPermission({ mode: 'readwrite' })) === 'granted'; }
+  catch (e) { canAutosave = false; }
+  return canAutosave;
+}
+async function writeFileQuiet() { // never triggers a prompt: checks the grant first
+  if (!fileHandle) return false;
+  try { if ((await fileHandle.queryPermission({ mode: 'readwrite' })) !== 'granted') { canAutosave = false; refreshHeader(); return false; } } catch (e) { return false; }
+  try { const w = await fileHandle.createWritable(); await w.write(serialize()); await w.close(); dirty = false; autosave(); refreshHeader(); return true; } catch (e) { return false; }
+}
+function touch() {
+  dirty = true; autosave();
+  if (fileHandle && canAutosave) { clearTimeout(fileTimer); fileTimer = setTimeout(writeFileQuiet, 600); }
+  refreshHeader();
+}
+const undoStack = [], redoStack = []; let lastSnap = null;
+function snapshot() { return JSON.stringify({ name: S.name, vision: S.vision, inProgress: S.inProgress, tags: S.tags, milestones: S.milestones, nodes: S.nodes, edges: S.edges, events: S.events, reviews: S.reviews }); }
+function commit() {
+  layout(); const now = snapshot(); if (view === 'direction') renderDir();
+  if (lastSnap && lastSnap !== now) { undoStack.push(lastSnap); if (undoStack.length > 100) undoStack.shift(); redoStack.length = 0; }
+  lastSnap = now; touch(); render(); refreshReady(); refreshWin(); renderSideTags();
+}
+function restore(snap) {
+  S = migrate(JSON.parse(snap)); lastSnap = snap;
+  if (sel && !byId(sel)) select(null); selected = new Set([...selected].filter(byId));
+  layout(); touch(); render(); refreshReady(); refreshWin(); renderSideTags();
+}
+function undo() { if (!undoStack.length) return; redoStack.push(snapshot()); restore(undoStack.pop()); }
+function redo() { if (!redoStack.length) return; undoStack.push(snapshot()); restore(redoStack.pop()); }
+function resetHistory() { undoStack.length = 0; redoStack.length = 0; lastSnap = snapshot(); }
+
+// ---------- project file ----------
+const serialize = () => JSON.stringify({ appVersion: VERSION, name: S.name, lastSeen: S.lastSeen, vision: S.vision, inProgress: S.inProgress, tags: S.tags, milestones: S.milestones, nodes: S.nodes, edges: S.edges, events: S.events, reviews: S.reviews }, null, 2);
+async function saveProject(as = false) {
+  const data = serialize();
+  if (window.showSaveFilePicker) {
+    try {
+      if (as || !fileHandle) fileHandle = await showSaveFilePicker({ suggestedName: (S.name || 'project').replace(/[^\w-]+/g, '-') + '.json', types: [{ description: 'BLOCKER project', accept: { 'application/json': ['.json'] } }] });
+      const w = await fileHandle.createWritable(); await w.write(data); await w.close();
+      fileName = fileHandle.name; dirty = false; await grantWrite(fileHandle); rememberHandle(fileHandle); autosave(); refreshHeader(); return;
+    } catch (e) { if (e.name === 'AbortError') return; }
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([data], { type: 'application/json' }));
+  a.download = fileName || (S.name || 'project').replace(/[^\w-]+/g, '-') + '.json'; a.click();
+  fileName = a.download; dirty = false; autosave(); refreshHeader();
+}
+async function openProject() {
+  if (dirty && !confirm('Discard unsaved changes to "' + S.name + '"?')) return;
+  if (window.showOpenFilePicker) {
+    try { const [h] = await showOpenFilePicker({ types: [{ description: 'BLOCKER project', accept: { 'application/json': ['.json'] } }] }); const f = await h.getFile(); await grantWrite(h); await loadFile(f, h); } catch (e) {}
+  } else $('file').click();
+}
+async function loadFile(f, handle = null) {
+  try { rememberHandle(handle); $('reopenBtn').hidden = true; const j = JSON.parse(await f.text()); if (!Array.isArray(j.nodes) || !Array.isArray(j.edges)) throw 0;
+    S = migrate(j); if (!j.name) S.name = f.name.replace(/\.json$/i, ''); fileHandle = handle; fileName = f.name; dirty = false; sel = null; cam = { x: 0, y: 0, z: 1 };
+    activeTags.clear(); focus = null; logging = false; layout(); startSession(); resetHistory(); autosave(); render(); refreshReady(); refreshWin(); refreshHeader(); renderSideTags(); }
+  catch { flash('Open failed: that file is not a planner project.'); }
+}
+function newProject() {
+  if (dirty && !confirm('Discard unsaved changes to "' + S.name + '"?')) return;
+  const name = prompt('Project name', 'Untitled project'); if (name == null) return;
+  S = blank(); S.name = name.trim() || 'Untitled project'; fileHandle = null; fileName = null; dirty = true; sel = null; cam = { x: 0, y: 0, z: 1 };
+  activeTags.clear(); logging = false; layout(); startSession(); resetHistory(); autosave(); render(); refreshReady(); refreshWin(); refreshHeader(); renderSideTags();
+}
+function refreshHeader() {
+  $('proj').textContent = S.name; $('proj').title = fileName ? 'File: ' + fileName : 'Not saved to a file yet';
+  const auto = fileHandle && canAutosave; $('dirty').classList.toggle('on', dirty && !auto); $('saveBtn').style.display = auto ? 'none' : '';
+  document.title = `${dirty ? '● ' : ''}${S.name} — BLOCKER ${VERSION}`;
+}
+
+// ---------- events ----------
+const ME = 'you'; let logging = false, prevSeen = null;
+function log(type, ref, extra = {}) { if (!logging) return; S.events.push({ at: Date.now(), by: ME, type, ref, ...extra }); if (S.events.length > 5000) S.events.splice(0, S.events.length - 5000); }
+function startSession() { prevSeen = S.lastSeen; S.lastSeen = Date.now(); logging = true; }
+function sinceLastVisit() { return prevSeen ? S.events.filter(e => e.at > prevSeen) : []; }
+// ---------- reviews (downward propagation of doctrine changes) ----------
+function pendingReview(x) { const t = x.reviewedAt || 0; return S.reviews.find(r => r.at > t && (r.cards.includes(x.id) || r.milestones.includes(x.id))) || null; }
+function touchReview(x, explicit = false) { x.reviewedAt = Date.now(); if (explicit) log('reviewed', x.id, { name: x.name }); }
+function reachOf(tenetIds, all = false) { // milestones serving any of these tenets (or all open milestones), and every card in their cones
+  const ms = S.milestones.filter(m => !m.closedAt && (all || m.pillars.some(id => tenetIds.includes(id))));
+  const cards = new Set(); for (const m of ms) for (const id of coneOf(m)) cards.add(id);
+  return { milestones: ms.map(m => m.id), cards: [...cards] };
+}
+// ---------- graph ----------
+let _ix = { edges: null, len: -1, nodes: null, nlen: -1, deps: new Map(), dents: new Map(), byId: new Map() };
+function index() { // rebuilt whenever the arrays change identity or length
+  if (_ix.edges !== S.edges || _ix.len !== S.edges.length) {
+    _ix.edges = S.edges; _ix.len = S.edges.length; _ix.deps = new Map(); _ix.dents = new Map();
+    for (const e of S.edges) { (_ix.deps.get(e.to) || _ix.deps.set(e.to, []).get(e.to)).push(e.from); (_ix.dents.get(e.from) || _ix.dents.set(e.from, []).get(e.from)).push(e.to); }
+  }
+  if (_ix.nodes !== S.nodes || _ix.nlen !== S.nodes.length) { _ix.nodes = S.nodes; _ix.nlen = S.nodes.length; _ix.byId = new Map(S.nodes.map(n => [n.id, n])); }
+  return _ix;
+}
+const byId = id => index().byId.get(id);
+const depsOf = id => index().deps.get(id) || [];
+const dependentsOf = id => index().dents.get(id) || [];
+const isReady = n => n.placed && !n.done && depsOf(n.id).every(d => byId(d)?.done);
+function reaches(a, b) {
+  const seen = new Set(), st = [a];
+  while (st.length) { const c = st.pop(); if (c === b) return true; if (seen.has(c)) continue; seen.add(c); st.push(...dependentsOf(c)); }
+  return false;
+}
+function depth(id, memo = {}) { // remaining depth: longest chain of unfinished prerequisites
+  if (memo[id] != null) return memo[id];
+  const d = depsOf(id).filter(x => !byId(x)?.done); memo[id] = -1;
+  memo[id] = d.length ? 1 + Math.max(...d.map(x => depth(x, memo))) : 0;
+  return memo[id];
+}
+
+// ---------- layout ----------
+const COLW = 260, COLX0 = 48, ROWH = 72, ROWY0 = 84, NODEH = 56, NODEW = 220, PAD = 20;
+let colCount = 1, rowsMax = 6, addBtnRect = null;
+const BACKLOG = -1, DONE = -2; // DONE is off-board: those cards live in the sidebar list
+let colPos = null; // d → display slot when filtering (empty columns skipped)
+const colX = d => COLX0 + ((colPos ? (colPos.get(d) ?? -1) : d + 1)) * COLW, rowY = i => ROWY0 + i * ROWH;
+function layout(force = false) {
+  buildCone();
+  const memo = {}, cols = {};
+  for (const n of S.nodes) { n.col = !n.placed ? BACKLOG : n.done ? DONE : depth(n.id, memo); (cols[n.col] ||= []).push(n); }
+  colCount = Math.max(1, ...Object.keys(cols).map(x => +x + 1));
+  const rowOf = {};
+  for (let d = BACKLOG; d < colCount; d++) {
+    const col = cols[d] || [];
+    if (d === BACKLOG) col.sort((a, b) => (a.row == null || b.row == null) ? (a.created || 0) - (b.created || 0) : a.row - b.row);
+    else if (d === 0) { col.forEach(n => n._k = downstream(n.id).count); col.sort((a, b) => b._k - a._k || a.name.localeCompare(b.name)); }
+    else { col.forEach(n => n._k = depsOf(n.id).filter(x => !byId(x)?.done).length); col.sort((a, b) => b._k - a._k || a.name.localeCompare(b.name)); }
+    let i = 0; for (const n of col) { if (!visible(n)) { n.row = null; n.x = -1e6; n.y = -1e6; continue; } n.row = i; rowOf[n.id] = i; n.x = colX(d) + PAD; n.y = rowY(i); i++; }
+  }
+  if (S.inProgress && !(byId(S.inProgress) && startable(byId(S.inProgress)))) S.inProgress = null;
+  const tnow = Date.now(); for (const n of S.nodes) { if (isReady(n)) { if (!n.readyAt) { n.readyAt = tnow; log('ready', n.id, { by: null }); } } else if (!n.done) n.readyAt = null; }
+  colPos = null;
+  if (activeTags.size || cone) { colPos = new Map(); let k = 0; for (let d = BACKLOG; d < colCount; d++) if ((cols[d] || []).some(visible)) colPos.set(d, k++); if (!k) colPos.set(0, 0); }
+  for (let d = BACKLOG; d < colCount; d++) for (const n of cols[d] || []) if (n.placed && visible(n)) n.x = colX(d) + PAD;
+  rowsMax = Math.max(6, ...Object.entries(cols).filter(([d]) => +d !== DONE).map(([, c]) => c.filter(visible).length));
+}
+function reorder(n, dropY) {
+  const col = S.nodes.filter(m => m.col === n.col && m !== n).sort((a, b) => a.row - b.row);
+  const i = Math.max(0, Math.min(col.length, Math.round((dropY - ROWY0) / ROWH)));
+  col.splice(i, 0, n); col.forEach((m, k) => m.row = k); layout();
+}
+let focus = null, cone = null; // focused milestone id and the set of its transitive prerequisites (+ itself)
+const msById = id => S.milestones.find(m => m.id === id);
+function coneOf(m) { const c = new Set(), st = [...m.parts]; st.forEach(id => c.add(id)); while (st.length) { for (const d of depsOf(st.pop())) if (!c.has(d)) { c.add(d); st.push(d); } } return c; }
+function buildCone() { const m = msById(focus); if (!m) { focus = null; cone = null; return; } cone = coneOf(m); }
+function msStats(m) { const c = [...coneOf(m)].map(byId).filter(Boolean), done = c.filter(n => n.done).length, memo = {}; const chain = Math.max(0, ...m.parts.map(id => byId(id) ? (byId(id).done ? -1 : chainLeft(id, memo) + 1) : 0)); return { total: c.length, done, chain }; }
+const visible = n => (!activeTags.size || [...activeTags].every(t => n.tags.includes(t))) && (!cone || cone.has(n.id));
+function chainLeft(id, memo = {}) { // longest chain of unfinished prerequisites below this card
+  if (memo[id] != null) return memo[id]; const d = depsOf(id).filter(x => !byId(x)?.done); memo[id] = -1;
+  memo[id] = d.length ? 1 + Math.max(...d.map(x => chainLeft(x, memo))) : 0; return memo[id];
+}
+const boardOrder = (a, b) => a.col - b.col || a.row - b.row;
+const worldW = () => COLX0 + (colPos ? colPos.size : colCount + 1) * COLW + 32, worldH = () => rowY(rowsMax) + 40;
+const stepColor = (d, a = 1) => { if (d === DONE) return `rgba(108,203,95,${a})`; if (d < 0) return `rgba(255,255,255,${.3 * a})`; const t = colCount > 1 ? d / (colCount - 1) : 0; return `hsla(${Math.round(120 - 120 * t)},62%,${Math.round(58 - 6 * t)}%,${a})`; };
+const colLabel = d => d === BACKLOG ? 'Backlog' : d === DONE ? 'Done' : d === 0 ? 'Ready' : d === 1 ? '1 step out' : d + ' steps out';
+
+// ---------- actions ----------
+function addTask(name) {
+  name = name.trim(); if (!name) return;
+  const id = 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  S.nodes.push({ id, name, desc: '', record: '', tags: [...activeTags], created: Date.now(), started: null, doneAt: null, readyAt: null, done: false, placed: false, x: 0, y: 0, row: null });
+  layout(); select(id); commit(); $('nameIn').focus(); $('nameIn').select();
+}
+function addDep(a, b) { // a requires b; returns true if added
+  if (a === b || S.edges.some(e => e.from === b && e.to === a)) return false;
+  if (reaches(a, b)) { flash(`Can't add: "${byId(b).name}" already depends on "${byId(a).name}".`); return false; }
+  for (const id of [a, b]) { const n = byId(id); if (!n.placed && !n.desc.trim()) { addDep._blocked = n; return false; } }
+  for (const id of [a, b]) { const n = byId(id); if (!n.placed) { n.placed = true; n.row = null; log('placed', n.id); } }
+  S.edges.push({ from: b, to: a }); return true;
+}
+function toggleDep(a, b) {
+  if (a === b) return;
+  const i = S.edges.findIndex(e => e.from === b && e.to === a);
+  if (i >= 0) { S.edges.splice(i, 1); layout(); commit(); return; }
+  if (reaches(a, b)) { flash(`Can't add: "${byId(b).name}" already depends on "${byId(a).name}".`); return; }
+  byId(a).placed = byId(b).placed = true; S.edges.push({ from: b, to: a }); layout(); commit();
+}
+// ---------- clipboard ----------
+let clipData = null; const CLIP_MARK = 'depplan-clip';
+function copySelected() {
+  const ids = new Set([...selected].filter(byId)); if (!ids.size) return;
+  const nodes = S.nodes.filter(n => ids.has(n.id)).sort(boardOrder), edges = S.edges.filter(e => ids.has(e.from) && ids.has(e.to));
+  const tags = S.tags.filter(t => nodes.some(n => n.tags.includes(t.id)));
+  clipData = { [CLIP_MARK]: 1, nodes, edges, tags };
+  try { navigator.clipboard?.writeText(JSON.stringify(clipData)).catch(() => {}); } catch (e) {}
+}
+function pasteClip(c) {
+  if (!c || !c[CLIP_MARK] || !Array.isArray(c.nodes) || !c.nodes.length) return;
+  const idMap = {}, tagMap = {};
+  for (const t of c.tags || []) { const ex = S.tags.find(x => x.id === t.id) || S.tags.find(x => x.name.toLowerCase() === t.name.toLowerCase()); if (ex) tagMap[t.id] = ex.id; else { const id = 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); S.tags.push({ id, name: t.name, color: t.color }); tagMap[t.id] = id; } }
+  for (const n of c.nodes) { const id = 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); idMap[n.id] = id;
+    S.nodes.push({ id, name: n.name, desc: n.desc || '', record: n.record || '', tags: (n.tags || []).map(t => tagMap[t]).filter(Boolean), created: Date.now(), started: null, doneAt: null, done: false, placed: !!n.placed, x: 0, y: 0, row: null }); }
+  for (const e of c.edges || []) if (idMap[e.from] && idMap[e.to]) S.edges.push({ from: idMap[e.from], to: idMap[e.to] });
+  selected = new Set(Object.values(idMap)); sel = null; anchor = [...selected][0]; commit(); select(anchor, 'keep');
+}
+async function pasteSelected() {
+  let c = clipData;
+  try { const t = await navigator.clipboard?.readText(); if (t) { const j = JSON.parse(t); if (j && j[CLIP_MARK]) c = j; } } catch (e) {}
+  pasteClip(c);
+}
+function duplicateSelected() { copySelected(); pasteClip(clipData); }
+function removeSelected() {
+  const ids = selected;
+  S.nodes = S.nodes.filter(n => !ids.has(n.id)); S.edges = S.edges.filter(e => !ids.has(e.from) && !ids.has(e.to)); if (ids.has(S.inProgress)) S.inProgress = null;
+  for (const m of S.milestones) m.parts = m.parts.filter(id => !ids.has(id));
+  select(null); layout(); commit();
+}
+function holdingMs(n) { return S.milestones.filter(m => !m.closedAt && m.parts.includes(n.id)); }
+function startBlock(n) { // the milestone (if any) that forbids starting this card: an open holder whose chain exceeds one step
+  for (const m of holdingMs(n)) { const st = msStats(m); if (st.chain > 1) { const blocked = m.parts.filter(id => byId(id) && !byId(id).done && !isReady(byId(id))).length; return { m, blocked, chain: st.chain }; } }
+  return null;
+}
+const startable = n => isReady(n) && !startBlock(n);
+function setInProgress(id) { const was = S.inProgress; S.inProgress = id && byId(id) && startable(byId(id)) ? id : null; if (S.inProgress) byId(S.inProgress).started ??= Date.now(); if (was && was !== S.inProgress) log('stopped', was); if (S.inProgress && S.inProgress !== was) log('started', S.inProgress); }
+function recordOk(n) { // done requires a Record, like a commit requires a message
+  if (n.record.trim()) return true;
+  select(n.id); render(); const r = $('recIn'); r.classList.add('err'); r.focus(); return false;
+}
+function intentOk(n) { // placing on the board requires an Intent
+  if (n.desc.trim()) return true;
+  select(n.id); render(); const r = $('descIn'); r.classList.add('err'); r.focus(); return false;
+}
+function markDone(n, v) { if (n.done === v) return; n.done = v; log(v ? 'done' : 'reopened', n.id); if (v) touchReview(n); n.doneAt = v ? Date.now() : null; n.row = null; if (v && S.inProgress === n.id) S.inProgress = null; }
+function flash(t) { const m = $('msg'); m.textContent = t; m.classList.add('on'); clearTimeout(m._t); m._t = setTimeout(() => m.classList.remove('on'), 4000); }
+
+// ---------- canvas ----------
+const cv = $('cv'), ctx = cv.getContext('2d');
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const F = () => css('--font');
+const SB = 10; // scrollbar thickness
+function resize() {
+  const r = cv.parentElement.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+  cv.width = r.width * dpr; cv.height = r.height * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); clampCam(); render();
+}
+addEventListener('resize', () => { resize(); placeWin(); if ($('search').classList.contains('on')) placeSearch(); });
+function clampCam() {
+  const W = cv.clientWidth, H = cv.clientHeight, ww = worldW() * cam.z, wh = worldH() * cam.z;
+  cam.x = ww <= W ? Math.min(0, Math.max(cam.x, W - ww)) : Math.min(0, Math.max(W - ww, cam.x));
+  cam.y = wh <= H ? Math.min(0, Math.max(cam.y, H - wh)) : Math.min(0, Math.max(H - wh, cam.y));
+  if (ww <= W) cam.x = 0; if (wh <= H) cam.y = 0;
+}
+function clip(t, w) { let s = t; while (ctx.measureText(s).width > w && s.length > 1) s = s.slice(0, -2) + '…'; return s; }
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); }
+function toWorld(ev) { const r = cv.getBoundingClientRect(); return { x: (ev.clientX - r.left - cam.x) / cam.z, y: (ev.clientY - r.top - cam.y) / cam.z }; }
+function hit(p) { for (let i = S.nodes.length - 1; i >= 0; i--) { const n = S.nodes[i]; if (n.done || !visible(n)) continue; if (p.x >= n.x && p.x <= n.x + NODEW && p.y >= n.y && p.y <= n.y + NODEH) return n; } return null; }
+function segClear(x1, x2, y, c0, c1) { // horizontal segment at y between x1..x2 misses every card in the columns strictly between c0 and c1
+  const M = 6;
+  for (const n of S.nodes) if (n.placed && !n.done && visible(n) && n.col > c0 && n.col < c1 && y > n.y - M && y < n.y + NODEH + M && n.x + NODEW > Math.min(x1, x2) && n.x < Math.max(x1, x2)) return false;
+  return true;
+}
+function poly(pts, r) {
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length - 1; i++) {
+    const [px, py] = pts[i - 1], [cx, cy] = pts[i], [nx, ny] = pts[i + 1];
+    const d1 = Math.hypot(cx - px, cy - py), d2 = Math.hypot(nx - cx, ny - cy), k = Math.min(r, d1 / 2, d2 / 2);
+    if (k < .5) { ctx.lineTo(cx, cy); continue; }
+    ctx.lineTo(cx - (cx - px) / d1 * k, cy - (cy - py) / d1 * k);
+    ctx.quadraticCurveTo(cx, cy, cx + (nx - cx) / d2 * k, cy + (ny - cy) / d2 * k);
+  }
+  ctx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+}
+function scrollbars() { // returns geometry of both bars in screen space (null when not needed)
+  const W = cv.clientWidth, H = cv.clientHeight, ww = worldW() * cam.z, wh = worldH() * cam.z;
+  const h = ww > W ? { track: [0, H - SB, W - SB, SB], len: Math.max(24, W * W / ww), pos: -cam.x / ww * W } : null;
+  const v = wh > H ? { track: [W - SB, 0, SB, H - SB], len: Math.max(24, H * H / wh), pos: -cam.y / wh * H } : null;
+  return { h, v };
+}
+
+function render() {
+  const W = cv.clientWidth, H = cv.clientHeight;
+  ctx.save(); ctx.clearRect(0, 0, W, H);
+  ctx.translate(cam.x, cam.y); ctx.scale(cam.z, cam.z);
+  const bandH = rowY(rowsMax);
+  for (let d = BACKLOG; d < colCount; d++) {
+    if (colPos && !colPos.has(d)) continue;
+    const x = colX(d);
+    ctx.fillStyle = d === BACKLOG ? css('--base') : css('--layer'); rr(x + 6, 12, COLW - 12, bandH, 6); ctx.fill();
+    ctx.strokeStyle = css('--stroke'); ctx.lineWidth = 1; if (d === BACKLOG) ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.font = '600 13px ' + F(); ctx.textBaseline = 'middle';
+    ctx.fillStyle = d === BACKLOG ? css('--text3') : d === DONE ? stepColor(DONE, .7) : stepColor(d);
+    ctx.fillText(colLabel(d), x + PAD, 40);
+    const cnt = S.nodes.filter(n => n.col === d && visible(n)), open = cnt.filter(n => !n.done).length;
+    ctx.font = '12px ' + F(); ctx.fillStyle = css('--text4'); ctx.textAlign = 'right';
+    ctx.fillText(d < 0 ? `${cnt.length}` : `${open} open`, x + COLW - PAD, 40); ctx.textAlign = 'left';
+    ctx.strokeStyle = d === BACKLOG ? css('--stroke2') : stepColor(d, .7);
+    ctx.beginPath(); ctx.moveTo(x + PAD, 60); ctx.lineTo(x + COLW - PAD, 60); ctx.stroke();
+    ctx.strokeStyle = css('--stroke'); ctx.setLineDash([4, 5]);
+    for (let i = cnt.length; i < rowsMax; i++) { rr(x + PAD, rowY(i), NODEW, NODEH, 4); ctx.stroke(); }
+    ctx.setLineDash([]);
+    if (d === BACKLOG) { const ay = rowY(cnt.length); addBtnRect = { x: colX(BACKLOG) + PAD, y: ay, w: NODEW, h: NODEH };
+      ctx.strokeStyle = css('--stroke2'); ctx.setLineDash([4, 5]); rr(addBtnRect.x, ay, NODEW, NODEH, 4); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = css('--text3'); ctx.font = '600 13px ' + F(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('+ Add task', addBtnRect.x + NODEW / 2, ay + NODEH / 2); ctx.textAlign = 'left'; }
+  }
+  // edges
+  S.edges.forEach((e, idx) => {
+    const a = byId(e.from), b = byId(e.to); if (!a || !b || a.done || b.done || !visible(a) || !visible(b)) return;
+    const ax = a.x + NODEW, ay = a.y + NODEH / 2, bx = b.x, by = b.y + NODEH / 2;
+    if (!selected.has(e.from) && !selected.has(e.to)) return; // only the selection's own arrows
+    const focus = selected.has(e.to) ? b : a; // colour from the selected end
+    ctx.strokeStyle = a.done ? css('--done') : stepColor(focus.col);
+    ctx.lineWidth = 2; ctx.globalAlpha = a.done && b.done ? .4 : 1;
+    ctx.beginPath();
+    const g1 = ax + PAD, g2 = bx - PAD; // gutter centres; shared segments overlap exactly
+    if (b.col - a.col <= 1 || segClear(g1, bx, by, a.col, b.col)) {
+      poly([[ax, ay], [g1, ay], [g1, by], [bx, by]], 8);                       // one turn in the first gutter, then straight in
+    } else {                                                                     // a card sits on that row: go round through the nearest row gap
+      let best = null, bestCost = Infinity;
+      for (let i = 0; i <= rowsMax; i++) { const y = rowY(i) - (ROWH - NODEH) / 2, c = Math.abs(ay - y) + Math.abs(by - y); if (segClear(g1, g2, y, a.col, b.col) && c < bestCost) { bestCost = c; best = y; } }
+      const chan = best ?? (a.y + NODEH + (ROWH - NODEH) / 2);
+      poly([[ax, ay], [g1, ay], [g1, chan], [g2, chan], [g2, by], [bx, by]], 8);
+    }
+    ctx.stroke();
+    ctx.fillStyle = ctx.strokeStyle; ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx - 7, by - 4); ctx.lineTo(bx - 7, by + 4); ctx.fill();
+    ctx.globalAlpha = 1;
+  });
+  // nodes
+  for (const n of S.nodes) {
+    if (n.done || !visible(n) || (drag?.moved && drag.node === n)) continue;
+    const ready = isReady(n), isSel = selected.has(n.id), hitInfo = searchHits.get(n.id);
+    ctx.globalAlpha = query && !hitInfo ? .22 : 1;
+    const ip = S.inProgress === n.id;
+    if (ip) { ctx.shadowColor = css('--accent'); ctx.shadowBlur = 22; }
+    ctx.fillStyle = isSel ? css('--card-hover') : hitInfo || ip ? css('--card-hover') : css('--card');
+    rr(n.x, n.y, NODEW, NODEH, 4); ctx.fill(); ctx.shadowBlur = 0;
+    if (ip) { ctx.strokeStyle = css('--accent'); ctx.lineWidth = 2; rr(n.x - 3, n.y - 3, NODEW + 6, NODEH + 6, 7); ctx.stroke(); }
+    ctx.strokeStyle = stepColor(n.col, isSel ? 1 : n.done ? .35 : .75); ctx.lineWidth = isSel ? 2 : 1; ctx.stroke();
+    ctx.fillStyle = ip ? css('--accent') : stepColor(n.col, n.done ? .35 : ready ? 1 : .55); rr(n.x, n.y, 4, NODEH, [4, 0, 0, 4]); ctx.fill();
+    ctx.font = '600 13px ' + F(); ctx.textBaseline = 'middle';
+    ctx.fillStyle = n.done ? css('--text3') : css('--text');
+    const t = clip(n.name, NODEW - 30);
+    if (hitInfo) { // matched-text marker under the name, and an accent ring
+      ctx.strokeStyle = css('--accent'); ctx.lineWidth = 1.5; rr(n.x - 2, n.y - 2, NODEW + 4, NODEH + 4, 6); ctx.stroke();
+      const i = query ? t.toLowerCase().indexOf(query) : -1;
+      if (i >= 0) { const x0 = n.x + 14 + ctx.measureText(t.slice(0, i)).width, w = ctx.measureText(t.slice(i, i + query.length)).width; ctx.fillStyle = 'rgba(96,205,255,.28)'; rr(x0 - 2, n.y + 10, w + 4, 18, 3); ctx.fill(); }
+    }
+    ctx.fillStyle = n.done ? css('--text3') : css('--text');
+    ctx.fillText(t, n.x + 14, n.y + 19);
+    if (pendingReview(n)) { ctx.fillStyle = '#f7c948'; ctx.beginPath(); ctx.moveTo(n.x + 4, n.y); ctx.lineTo(n.x + 14, n.y); ctx.lineTo(n.x + 4, n.y + 10); ctx.fill(); }
+    n.tags.forEach((tid, i) => { const g = S.tags.find(x => x.id === tid); if (!g) return; ctx.fillStyle = g.color; rr(n.x + NODEW - 14 - 22 * (i + 1) + 4, n.y + 8, 18, 4, 2); ctx.fill(); });
+    if (n.done) { ctx.strokeStyle = css('--text3'); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(n.x + 14, n.y + 19); ctx.lineTo(n.x + 14 + ctx.measureText(t).width, n.y + 19); ctx.stroke(); }
+    ctx.font = '12px ' + F();
+    const blocking = n.placed && !n.done ? depsOf(n.id).filter(d => !byId(d)?.done).length : 0;
+    let right = 0;
+    const unblocks = ready ? downstream(n.id).count : 0;
+    if (ip && n.started) { const age = Math.floor((Date.now() - n.started) / DAY), med = metrics().cycle, txt = age + 'd'; right = ctx.measureText(txt).width + 8; ctx.fillStyle = med != null && age > med ? css('--danger') : css('--accent'); ctx.textAlign = 'right'; ctx.fillText(txt, n.x + NODEW - 12, n.y + 39); ctx.textAlign = 'left'; }
+    else if (blocking || unblocks) { // right-hand count: blockers on blocked cards, downstream reach on ready ones
+      const txt = blocking ? `${blocking} ⊘` : `↳ ${unblocks}`; right = ctx.measureText(txt).width + 8;
+      ctx.fillStyle = blocking ? stepColor(n.col, .9) : css('--text3'); ctx.textAlign = 'right'; ctx.fillText(txt, n.x + NODEW - 12, n.y + 39); ctx.textAlign = 'left';
+    }
+    ctx.fillStyle = css('--text3');
+    const sub = n.desc.trim() ? clip(n.desc.trim().split('\n')[0], NODEW - 30 - right) : '';
+    if (sub) ctx.fillText(sub, n.x + 14, n.y + 39);
+    else if (!blocking) { ctx.fillStyle = ip ? css('--accent') : css('--text4'); ctx.fillText(ip ? 'In progress' : !n.placed ? 'Not placed' : ready ? 'Ready' : '', n.x + 14, n.y + 39); }
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+  // scrollbars (screen space)
+  const { h, v } = scrollbars();
+  for (const b of [h, v]) {
+    if (!b) continue;
+    ctx.fillStyle = 'rgba(255,255,255,.04)'; ctx.fillRect(...b.track);
+    ctx.fillStyle = 'rgba(255,255,255,.28)';
+    if (b === h) rr(b.pos + 2, H - SB + 3, b.len - 4, SB - 6, 2); else rr(W - SB + 3, b.pos + 2, SB - 6, b.len - 4, 2);
+    ctx.fill();
+  }
+  const done = S.nodes.filter(n => n.done).length;
+  $('stat').innerHTML = `${done} of ${S.nodes.length} done  ·  ${S.edges.length} links  ·  <span id="zoom" title="Reset zoom">${Math.round(cam.z * 100)}%</span>`;
+  $('zoom').onclick = () => { const W = cv.clientWidth, H = cv.clientHeight, cx = (W / 2 - cam.x) / cam.z, cy = (H / 2 - cam.y) / cam.z; cam.z = 1; cam.x = W / 2 - cx; cam.y = H / 2 - cy; clampCam(); render(); placeWin(); };
+}
+
+// ---------- input ----------
+let drag = null;
+cv.addEventListener('pointerdown', ev => {
+  if (ev.button !== 0) return;
+  if (drag) abortDrag();
+  const r = cv.getBoundingClientRect(), sx = ev.clientX - r.left, sy = ev.clientY - r.top, { h, v } = scrollbars();
+  cv.setPointerCapture(ev.pointerId);
+  if (h && sy >= cv.clientHeight - SB) { drag = { sbh: true, start: sx, cx: cam.x }; return; }
+  if (v && sx >= cv.clientWidth - SB) { drag = { sbv: true, start: sy, cy: cam.y }; return; }
+  const p = toWorld(ev), n = hit(p);
+  if (!n && addBtnRect && p.x >= addBtnRect.x && p.x <= addBtnRect.x + addBtnRect.w && p.y >= addBtnRect.y && p.y <= addBtnRect.y + addBtnRect.h) { cv.releasePointerCapture(ev.pointerId); addTask('New task'); return; }
+  cv.classList.add('drag');
+  if (n) {
+    const mode = ev.shiftKey ? 'range' : (ev.ctrlKey || ev.metaKey) ? 'toggle' : 'single';
+    drag = { node: n, ox: p.x - n.x, oy: p.y - n.y, moved: false, wasSel: selected.has(n.id), mode, home: { x: n.x, y: n.y } };
+  } else { select(null); drag = { pan: true, sx: ev.clientX - cam.x, sy: ev.clientY - cam.y }; }
+  render();
+});
+cv.addEventListener('pointermove', ev => {
+  if (!drag) return;
+  const r = cv.getBoundingClientRect();
+  if (drag.sbh) { cam.x = drag.cx - (ev.clientX - r.left - drag.start) * worldW() * cam.z / cv.clientWidth; clampCam(); render(); }
+  else if (drag.sbv) { cam.y = drag.cy - (ev.clientY - r.top - drag.start) * worldH() * cam.z / cv.clientHeight; clampCam(); render(); }
+  else if (drag.pan) { cam.x = ev.clientX - drag.sx; cam.y = ev.clientY - drag.sy; clampCam(); render(); }
+  else if (drag.node) {
+    const p = toWorld(ev); drag.node.y = p.y - drag.oy; drag.node.x = p.x - drag.ox;
+    if (!drag.moved) { drag.moved = true; showGhost(drag); }
+    const g = $('ghost'), sx = drag.node.x * cam.z + cam.x + r.left, sy = drag.node.y * cam.z + cam.y + r.top;
+    g.style.left = sx + 'px'; g.style.top = sy + 'px'; g.style.transform = `scale(${cam.z})`;
+    $('depList').classList.toggle('drop', $('win').classList.contains('on') && dropTarget(drag.node));
+    document.querySelectorAll('#calGrid .d.drop, #calMs li.drop').forEach(e => e.classList.remove('drop')); const cd = calDayAt(ev) || msAt(ev); if (cd) cd.classList.add('drop');
+    const dr = $('doneList').getBoundingClientRect(); $('doneList').classList.toggle('drop', true); render();
+  }
+});
+function showGhost(d) {
+  const g = $('ghost'), n = d.node, cnt = d.wasSel ? selected.size : 1;
+  g.querySelector('.n').textContent = n.name; g.querySelector('.s').textContent = colLabel(n.col);
+  g.querySelector('.b').textContent = cnt > 1 ? cnt : ''; g.querySelector('.b').style.display = cnt > 1 ? 'block' : 'none';
+  g.classList.add('on');
+}
+function overDepList(ev) { const r = $('depList').getBoundingClientRect(); return $('win').classList.contains('on') && ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top - 8 && ev.clientY <= r.bottom + 8; }
+function dropTarget(n) { return sel && (sel !== n.id || selected.size > 1); } // some selected task other than the card itself
+function abortDrag() { // cancel without applying: snap everything back
+  $('depList').classList.remove('drop'); $('doneList').classList.remove('drop'); $('ghost').classList.remove('on');
+  if (drag?.node) layout();
+  drag = null; cv.classList.remove('drag'); render();
+}
+cv.addEventListener('pointercancel', abortDrag);
+cv.addEventListener('lostpointercapture', () => { if (drag) abortDrag(); });
+cv.addEventListener('dragstart', ev => ev.preventDefault());
+cv.addEventListener('pointerup', ev => {
+  const calDay = calDayAt(ev)?.dataset.day, calMs = msAt(ev)?.dataset.ms; document.querySelectorAll('#calGrid .d.drop, #calMs li.drop').forEach(e => e.classList.remove('drop'));
+  const dr = $('doneList').getBoundingClientRect(), onDone = ev.clientX >= dr.left && ev.clientX <= dr.right && ev.clientY >= dr.top - 8 && ev.clientY <= dr.bottom + 8; // measure before the zone collapses
+  $('depList').classList.remove('drop'); $('doneList').classList.remove('drop'); $('ghost').classList.remove('on');
+  if (drag?.node && !drag.moved) { select(drag.node.id, drag.mode); drag = null; cv.classList.remove('drag'); render(); return; }
+  if (drag?.moved) {
+    const n = drag.node, group = drag.wasSel ? [...selected].map(byId).filter(Boolean) : [n];
+    if (calDay || calMs) { const ids = group.map(m => m.id); const target = calMs ? msById(calMs) : S.milestones.find(m => m.due === calDay); if (target) { target.parts = [...new Set([...target.parts, ...ids])]; focus = target.id; } else newMilestone(calDay, ids); layout(); commit(); drag = null; cv.classList.remove('drag'); render(); return; } // new milestone on a day, or add parts
+    if (overDepList(ev) && dropTarget(n)) { // drop onto Requires: target task requires every dragged card
+      const gids = new Set(group.map(m => m.id));
+      let targets = [...selected].filter(id => !gids.has(id)); if (!targets.length) targets = [sel];
+      addDep._blocked = null;
+      for (const t of targets) group.forEach(m => { if (m.id !== t) addDep(t, m.id); });
+      layout(); commit(); if (addDep._blocked) intentOk(addDep._blocked); placeWin();
+      if (added && !byId(target).placed) {} // (addDep places both ends; layout above assigns their columns) drag = null; cv.classList.remove('drag'); render(); return;
+    }
+    const bx0 = colPos ? COLX0 + ((colPos.get(BACKLOG) ?? -1) + 1) * COLW : colX(0);
+    const cx = n.x + NODEW / 2, zone = onDone ? DONE : cx < bx0 ? BACKLOG : 0; // which region it was dropped in
+    if (zone === BACKLOG && n.col !== BACKLOG) {
+      const linked = group.filter(m => m.placed && S.edges.some(e => e.from === m.id || e.to === m.id));
+      if (linked.length) flash(linked.length === 1 ? 'Remove its links first to send it back to the backlog.' : `${linked.length} of these have links; remove them first.`);
+      group.forEach(m => { if (m.placed && !linked.includes(m)) { m.placed = false; markDone(m, false); m.row = null; if (S.inProgress === m.id) setInProgress(null); log('unplaced', m.id); } });
+    } else if (zone === DONE && n.col !== DONE) {
+      const missing = group.filter(m => S.inProgress === m.id && !m.record.trim());
+      group.forEach(m => { if (S.inProgress === m.id && m.record.trim()) markDone(m, true); });
+      if (missing.length) { layout(); commit(); recordOk(missing[0]); placeWin(); drag = null; cv.classList.remove('drag'); render(); return; }
+    } else if (zone === 0 && n.col === BACKLOG) {
+      const noIntent = group.filter(m => m.col === BACKLOG && !m.desc.trim());
+      group.forEach(m => { if (m.col === BACKLOG && m.desc.trim()) { m.placed = true; m.row = null; log('placed', m.id); } });
+      if (noIntent.length) { layout(); commit(); intentOk(noIntent[0]); placeWin(); drag = null; cv.classList.remove('drag'); render(); return; }
+    }
+    if (n.col === BACKLOG && zone === BACKLOG) reorder(n, n.y); else layout();
+    commit(); placeWin();
+  } else if (drag?.node) layout();
+  drag = null; cv.classList.remove('drag'); render();
+});
+cv.addEventListener('dblclick', ev => { const n = hit(toWorld(ev)); if (!n) return;
+  if (!n.placed) { if (!intentOk(n)) return; n.placed = true; n.row = null; log('placed', n.id); }            // backlog → Ready
+  else if (S.inProgress === n.id) setInProgress(null);        // in progress → not
+  else if (isReady(n)) { const b = startBlock(n); if (b) { flash(`Not startable: "${b.m.name}" is ${b.chain} steps deep — ${b.blocked} part${b.blocked === 1 ? '' : 's'} still ${b.blocked === 1 ? 'has' : 'have'} prerequisites.`); return; } setInProgress(n.id); }   // Ready → in progress
+  else return;                                                // blocked: nothing to do
+  commit(); });
+cv.addEventListener('wheel', ev => {
+  ev.preventDefault();
+  if (ev.ctrlKey || ev.metaKey) {
+    const r = cv.getBoundingClientRect(), mx = ev.clientX - r.left, my = ev.clientY - r.top;
+    const z = Math.min(2.5, Math.max(.35, cam.z * (ev.deltaY < 0 ? 1.1 : 1 / 1.1)));
+    cam.x = mx - (mx - cam.x) * z / cam.z; cam.y = my - (my - cam.y) * z / cam.z; cam.z = z;
+  } else if (ev.shiftKey) cam.x -= (ev.deltaY || ev.deltaX);
+  else { cam.x -= ev.deltaX; cam.y -= ev.deltaY; }
+  clampCam(); render(); placeWin();
+}, { passive: false });
+addEventListener('keydown', ev => {
+  const inText = ['INPUT', 'TEXTAREA'].includes(ev.target.tagName), inArea = ev.target.tagName === 'TEXTAREA';
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z' && !inText) { ev.preventDefault(); ev.shiftKey ? redo() : undo(); return; }
+  if ((ev.ctrlKey || ev.metaKey) && !inText && ev.key.toLowerCase() === 'c') { ev.preventDefault(); copySelected(); return; }
+  if ((ev.ctrlKey || ev.metaKey) && !inText && ev.key.toLowerCase() === 'v') { ev.preventDefault(); pasteSelected(); return; }
+  if ((ev.ctrlKey || ev.metaKey) && !inText && ev.key.toLowerCase() === 'd') { ev.preventDefault(); duplicateSelected(); return; }
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'y' && !inText) { ev.preventDefault(); redo(); return; }
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 's') { ev.preventDefault(); saveProject(ev.shiftKey); return; }
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'o') { ev.preventDefault(); openProject(); return; }
+  if (ev.key === 'Enter' && !ev.repeat && !ev.shiftKey) {
+    if (!inText) { ev.preventDefault(); addTask('New task'); return; }
+    if ($('win').contains(ev.target)) {
+      if (ev.ctrlKey || ev.metaKey) { ev.preventDefault(); ev.target.blur(); addTask('New task'); return; } // finish and chain
+      if (!inArea) { ev.preventDefault(); ev.target.blur(); select(null); render(); return; }            // finish
+    }
+  }
+  if (ev.key === ' ' && !inText && !ev.ctrlKey && !ev.metaKey && !ev.altKey) { ev.preventDefault(); openSearch(); return; }
+  if (ev.key === 'Escape') { if ($('search').classList.contains('on')) { closeSearch(); return; } if (msArm) { msArm = false; refreshWin(); return; } if (!sel && (activeTags.size || focus)) { activeTags.clear(); focus = null; layout(); renderSideTags(); render(); refreshReady(); return; } select(null); render(); return; }
+  if (inText) return;
+  if ((ev.key === 'Delete' || ev.key === 'Backspace') && selected.size) removeSelected();
+});
+addEventListener('beforeunload', ev => { if (dirty && !(fileHandle && canAutosave)) { ev.preventDefault(); ev.returnValue = ''; } });
+
+// ---------- floating task window ----------
+let winPos = null; // user-dragged position; once set, every task opens there
+try { window.storage.get('depplan:winpos', false).then(r => { if (r?.value) winPos = JSON.parse(r.value); }).catch(() => {}); } catch (e) {}
+function select(id, mode = 'single') {
+  if (id !== sel) { $('recIn').classList.remove('err'); $('descIn').classList.remove('err'); }
+  if (id !== sel) { $('tagPop').classList.remove('on'); tagEditing = null; msArm = false; }
+  if (mode === 'single') { selected = new Set(id ? [id] : []); anchor = id; }
+  else if (mode === 'toggle' && id) { if (selected.has(id)) selected.delete(id); else selected.add(id); anchor = id; if (!selected.has(id)) id = [...selected].pop() || null; }
+  else if (mode === 'range' && id) {
+    const ord = [...S.nodes].sort(boardOrder), a = ord.findIndex(n => n.id === (anchor || id)), b = ord.findIndex(n => n.id === id);
+    ord.slice(Math.min(a, b), Math.max(a, b) + 1).forEach(n => selected.add(n.id));
+  }
+  sel = id; refreshWin();
+}
+function placeWin() {
+  const w = $('win'), n = byId(sel); if (!n || !w.classList.contains('on')) return;
+  const SW = cv.clientWidth, SH = cv.clientHeight, ww = w.offsetWidth, wh = w.offsetHeight;
+  let x, y;
+  if (winPos) ({ x, y } = winPos);
+  else if (n.done) { x = SW - ww - 24; y = 24; }
+  else {
+    const nx = n.x * cam.z + cam.x, ny = n.y * cam.z + cam.y;
+    x = nx + (NODEW + 24) * cam.z; y = ny - 8;
+    if (x + ww > SW - 12) x = nx - ww - 24 * cam.z;   // flip to the left
+  }
+  x = Math.max(12, Math.min(SW - ww - 12, x)); y = Math.max(12, Math.min(SH - wh - 12, y));
+  w.style.left = x + 'px'; w.style.top = y + 'px';
+}
+function refreshWin() {
+  const n = byId(sel), w = $('win');
+  w.classList.toggle('on', !!n);
+  if (!n) return;
+  const inMs = S.milestones.some(ms => ms.parts.includes(n.id)); $('msBtn').textContent = inMs || msArm ? '◆' : '◇'; $('msBtn').style.color = inMs || msArm ? 'var(--accent)' : ''; $('msBtn').style.background = msArm ? 'var(--accent-dim)' : ''; const pr = pendingReview(n); $('reviewRow').hidden = !pr; $('reviewRow').style.display = pr ? 'flex' : 'none'; if (pr) $('reviewTxt').textContent = `Doctrine changed ${fmtD(pr.at)}: ${pr.note}`;
+  const holders = S.milestones.filter(m => m.parts.includes(n.id)); $('msBtn').title = msArm ? 'Click a calendar day' : holders.length ? 'In: ' + holders.map(m => m.name).join(', ') + ' — click to remove' : 'Milestone';
+  const ipn = S.inProgress === n.id; $('startBtn').style.display = !ipn && startable(n) ? '' : 'none'; $('stopBtn').style.display = ipn ? '' : 'none'; $('startBtn').style.marginRight = 'auto'; 
+  $('doneBtn').querySelector('span').textContent = n.done ? 'Reopen' : 'Done'; $('doneBtn').style.display = n.done || S.inProgress === n.id ? '' : 'none'; $('doneBtn').style.marginRight = n.done ? 'auto' : '';
+  $('selCount').textContent = selected.size > 1 ? `+${selected.size - 1} selected` : '';
+  if (document.activeElement !== $('nameIn')) $('nameIn').value = n.name;
+  if (document.activeElement !== $('descIn')) $('descIn').value = n.desc;
+  if (document.activeElement !== $('recIn')) $('recIn').value = n.record;
+  renderTagRow(); if ($('tagPop').classList.contains('on')) renderTagPop();
+  const dl = $('depList'); dl.innerHTML = '';
+  const ds = depsOf(n.id);
+  dl.classList.toggle('empty', !ds.length);
+  for (const d of ds) {
+    const m = byId(d), li = document.createElement('li'); li.className = 'item';
+    li.innerHTML = `<span class="ok">${m.done ? '✓' : ''}</span><span class="n"></span><button class="x" title="Remove requirement">×</button>`;
+    li.querySelector('.n').textContent = m.name;
+    li.querySelector('.n').onclick = () => { select(d); render(); };
+    li.querySelector('.x').onclick = () => toggleDep(n.id, d);
+    dl.appendChild(li);
+  }
+  placeWin();
+}
+// drag the window by its title bar
+let wdrag = null;
+const W = $('win');
+W.addEventListener('pointerdown', ev => {
+  if (ev.button !== 0 || ev.target.closest('input,textarea,button,.chip,.list li,#tagPop')) return;
+  wdrag = { dx: ev.clientX - W.offsetLeft, dy: ev.clientY - W.offsetTop, moved: false }; W.setPointerCapture(ev.pointerId); ev.preventDefault();
+});
+W.addEventListener('pointermove', ev => { if (!wdrag) return; wdrag.moved = true; winPos = { x: ev.clientX - wdrag.dx, y: ev.clientY - wdrag.dy }; placeWin(); });
+W.addEventListener('pointerup', () => { const m = wdrag?.moved; wdrag = null; if (m) try { window.storage.set('depplan:winpos', JSON.stringify(winPos), false).catch(() => {}); } catch (e) {} });
+
+// ---------- search ----------
+let cur = 0;
+let searchPos = null;
+try { window.storage.get('depplan:searchpos', false).then(r => { if (r?.value) searchPos = JSON.parse(r.value); }).catch(() => {}); } catch (e) {}
+function placeSearch() {
+  const b = $('searchBox'), SW = cv.clientWidth, SH = cv.clientHeight, bw = b.offsetWidth, bh = b.offsetHeight;
+  let x = searchPos ? searchPos.x : (SW - bw) / 2, y = searchPos ? searchPos.y : SH * .1;
+  x = Math.max(8, Math.min(SW - bw - 8, x)); y = Math.max(8, Math.min(SH - bh - 8, y));
+  b.style.left = x + 'px'; b.style.top = y + 'px';
+}
+let sdrag = null;
+const sb = $('searchBox');
+sb.addEventListener('pointerdown', ev => {
+  if (ev.button !== 0 || ev.target.closest('#searchRes li:not(.muted)')) return; // results stay clickable
+  sdrag = { dx: ev.clientX - sb.offsetLeft, dy: ev.clientY - sb.offsetTop, moved: false }; sb.setPointerCapture(ev.pointerId);
+  if (ev.target !== $('searchIn')) ev.preventDefault(); // keep the caret in the input
+});
+sb.addEventListener('pointermove', ev => {
+  if (!sdrag) return;
+  if (!sdrag.moved && Math.hypot(ev.clientX - (sb.offsetLeft + sdrag.dx), ev.clientY - (sb.offsetTop + sdrag.dy)) < 3) return;
+  sdrag.moved = true; searchPos = { x: ev.clientX - sdrag.dx, y: ev.clientY - sdrag.dy }; placeSearch();
+});
+sb.addEventListener('pointerup', () => { const moved = sdrag?.moved; sdrag = null; $('searchIn').focus(); if (moved) try { window.storage.set('depplan:searchpos', JSON.stringify(searchPos), false).catch(() => {}); } catch (e) {} });
+function openSearch() { $('search').classList.add('on'); $('searchIn').value = ''; query = ''; searchHits.clear(); cur = 0; runSearch(); placeSearch(); $('searchIn').focus(); }
+function closeSearch() { $('search').classList.remove('on'); query = ''; searchHits.clear(); render(); }
+const FIELDS = [['name', 'name'], ['desc', 'intent'], ['record', 'record'], ['_tags', 'tag']];
+function runSearch() {
+  query = $('searchIn').value.trim().toLowerCase(); searchHits.clear();
+  const res = [];
+  if (query) for (const n of S.nodes) { if (!visible(n)) continue;
+    for (const [f, label] of FIELDS) {
+      const v = f === '_tags' ? n.tags.map(t => S.tags.find(g => g.id === t)?.name || '').join(', ') : (n[f] || ''), i = v.toLowerCase().indexOf(query);
+      if (i >= 0) { const info = { field: label, text: v, at: i }; searchHits.set(n.id, info); res.push({ n, info }); break; }
+    }
+  }
+  res.sort((a, b) => (a.info.field === 'name' ? 0 : 1) - (b.info.field === 'name' ? 0 : 1) || a.n.name.localeCompare(b.n.name));
+  if (query) { for (const ms of S.milestones) if (ms.name.toLowerCase().includes(query)) res.push({ ms, n: { name: ms.name, col: null }, info: { field: 'milestone', text: '', at: 0 } });
+    for (const p of S.vision.pillars) if (p.name.toLowerCase().includes(query) || (p.rejects || []).some(r => r.toLowerCase().includes(query))) res.push({ tenet: p, n: { name: p.name, col: null }, info: { field: 'tenet', text: (p.rejects || []).join('; '), at: 0 } }); }
+  cur = Math.min(cur, Math.max(0, res.length - 1));
+  const ul = $('searchRes'); ul.innerHTML = '';
+  ul.style.display = res.length ? '' : 'none';
+  const esc = t => t.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const mark = t => { const i = t.toLowerCase().indexOf(query); return i < 0 ? esc(t) : esc(t.slice(0, i)) + '<mark>' + esc(t.slice(i, i + query.length)) + '</mark>' + esc(t.slice(i + query.length)); };
+  res.forEach((r, k) => {
+    const li = document.createElement('li'); if (k === cur) li.className = 'cur';
+    const ctxText = r.info.field === 'name' ? '' : r.info.text.slice(Math.max(0, r.info.at - 30), r.info.at + 60).replace(/\n/g, ' ');
+    li.innerHTML = `<span class="n">${mark(r.n.name)}</span><span class="c">${ctxText ? mark(ctxText) : ''}</span><span class="w">${r.ms ? 'milestone' : r.tenet ? 'tenet' : colLabel(r.n.col) + ' · ' + r.info.field}</span>`;
+    li.onmousemove = () => { if (cur !== k) { cur = k; runSearch(); } };
+    li.onclick = () => pickSearch(r);
+    ul.appendChild(li);
+  });
+  ul._res = res; render(); if ($('search').classList.contains('on')) placeSearch();
+}
+function pickSearch(r) { closeSearch(); if (r.ms) { if (focus !== r.ms.id) setFocus(r.ms.id, true); return; } if (r.tenet) { setView('vision'); return; } const n = r.n; select(n.id); if (!n.done) cam.x = Math.min(0, -(n.x * cam.z) + 40); cam.y = n.done ? cam.y : Math.min(0, -(n.y * cam.z) + 100); clampCam(); render(); placeWin(); }
+$('searchIn').addEventListener('input', runSearch);
+$('searchIn').addEventListener('keydown', ev => {
+  ev.stopPropagation();
+  const res = $('searchRes')._res || [];
+  if (ev.key === 'Escape') { ev.preventDefault(); closeSearch(); }
+  else if (ev.key === 'ArrowDown') { ev.preventDefault(); cur = Math.min(res.length - 1, cur + 1); runSearch(); }
+  else if (ev.key === 'ArrowUp') { ev.preventDefault(); cur = Math.max(0, cur - 1); runSearch(); }
+  else if (ev.key === 'Enter') { ev.preventDefault(); if (res[cur]) pickSearch(res[cur]); }
+});
+$('search').addEventListener('pointerdown', ev => { if (ev.target === $('search')) closeSearch(); });
+
+// ---------- tags ----------
+const PALETTE = ['#60cdff', '#6ccb5f', '#f7c948', '#ff8c42', '#ff6b8b', '#c58cff', '#4fd1c5', '#a3a3a3', '#f2f2f2', '#ffd6a5'];
+let tagEditing = null; // tag id being edited, 'new', or null
+function tagById(id) { return S.tags.find(t => t.id === id); }
+function renderTagRow() {
+  const n = byId(sel), row = $('tagRow'); row.innerHTML = ''; if (!n) return;
+  n.tags.map(tagById).filter(Boolean).forEach(t => { const c = document.createElement('span'); c.className = 'chip'; c.style.background = t.color; c.textContent = t.name; c.title = 'Click to remove'; c.onclick = () => { n.tags = n.tags.filter(x => x !== t.id); commit(); }; row.appendChild(c); });
+  const add = document.createElement('span'); add.className = 'chip add'; add.textContent = '+'; add.onclick = () => { $('tagPop').classList.toggle('on'); tagEditing = null; renderTagPop(); }; row.appendChild(add);
+}
+function renderTagPop() {
+  const n = byId(sel), list = $('tagList'), ed = $('tagEdit'); list.innerHTML = ''; ed.innerHTML = ''; if (!n) return;
+  for (const t of S.tags) {
+    const r = document.createElement('div'); r.className = 'trow';
+    const pill = document.createElement('div'); pill.className = 'pill' + (n.tags.includes(t.id) ? ' on' : ''); pill.style.background = t.color;
+    pill.innerHTML = '<span></span><span class="ck">✓</span>'; pill.querySelector('span').textContent = t.name;
+    pill.onclick = () => { n.tags = n.tags.includes(t.id) ? n.tags.filter(x => x !== t.id) : [...n.tags, t.id]; touch(); render(); renderTagRow(); renderTagPop(); };
+    const e = document.createElement('button'); e.className = 'ed'; e.title = 'Edit tag'; e.textContent = '✎'; e.onclick = () => { tagEditing = t.id; renderTagPop(); };
+    r.append(pill, e); list.appendChild(r);
+  }
+  tagEditor(ed, tagEditing, n, () => { tagEditing = null; renderTagPop(); });
+}
+function tagEditor(ed, editing, applyTo, done) {
+  if (editing) {
+    const t = editing === 'new' ? { name: '', color: PALETTE[S.tags.length % PALETTE.length] } : tagById(editing);
+    let color = t.color;
+    ed.className = 'tedit'; ed.innerHTML = '';
+    const inp = document.createElement('input'); inp.className = 'tb'; inp.placeholder = 'Tag name'; inp.value = t.name; inp.maxLength = 40;
+    const sw = document.createElement('div'); sw.className = 'sw8';
+    const paint = () => sw.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.c === color));
+    PALETTE.forEach(c => { const b = document.createElement('button'); b.style.background = c; b.dataset.c = c; b.onclick = () => { color = c; paint(); }; sw.appendChild(b); }); paint();
+    const row = document.createElement('div'); row.className = 'row';
+    const save = document.createElement('button'); save.className = 'cmd primary'; save.textContent = editing === 'new' ? 'Create' : 'Save';
+    const commitTag = () => { const name = inp.value.trim(); if (!name) { inp.focus(); return; }
+      if (editing === 'new') { const id = 'g' + Date.now().toString(36); S.tags.push({ id, name, color }); if (applyTo) applyTo.tags.push(id); } else Object.assign(t, { name, color });
+      done(null); commit(); };
+    save.onclick = commitTag; inp.addEventListener('keydown', ev => { ev.stopPropagation(); if (ev.key === 'Enter') commitTag(); if (ev.key === 'Escape') done(null); });
+    const cancel = document.createElement('button'); cancel.className = 'cmd'; cancel.textContent = 'Cancel'; cancel.onclick = () => done(null);
+    row.append(cancel, save);
+    if (editing !== 'new') { const del = document.createElement('button'); del.className = 'cmd danger'; del.textContent = 'Delete'; del.style.marginRight = 'auto';
+      del.onclick = () => { S.tags = S.tags.filter(x => x !== t); S.nodes.forEach(m => m.tags = m.tags.filter(x => x !== t.id)); activeTags.delete(t.id); done(null); commit(); };
+      row.prepend(del); }
+    ed.append(inp, sw, row); inp.focus(); inp.select();
+  } else if (ed.id === 'tagEdit') {
+    ed.className = ''; ed.innerHTML = ''; const b = document.createElement('button'); b.className = 'cmd tnew'; b.textContent = 'New'; b.onclick = () => { tagEditing = 'new'; renderTagPop(); }; ed.appendChild(b);
+  } else { ed.className = ''; ed.innerHTML = ''; }
+}
+let sideEditing = null; const openWeeks = new Set();
+function renderSideTags() {
+  const row = $('sideTags'); row.innerHTML = '';
+  for (const t of S.tags) {
+    const c = document.createElement('span'); c.className = 'chip side' + (activeTags.has(t.id) ? ' on' : ''); c.style.background = t.color;
+    c.innerHTML = '<span></span><span class="ed" title="Edit">✎</span>'; c.querySelector('span').textContent = t.name;
+    c.onclick = ev => { if (ev.target.classList.contains('ed')) { sideEditing = t.id; renderSideTags(); return; } toDesign(); if (activeTags.has(t.id)) activeTags.delete(t.id); else activeTags.add(t.id); layout(); clampCam(); renderSideTags(); render(); placeWin(); };
+    row.appendChild(c);
+  }
+  const add = document.createElement('span'); add.className = 'chip add'; add.textContent = '+'; add.onclick = () => { sideEditing = 'new'; renderSideTags(); }; row.appendChild(add);
+  tagEditor($('sideTagEdit'), sideEditing, null, () => { sideEditing = null; renderSideTags(); });
+}
+$('tagPopClose').onclick = () => { $('tagPop').classList.remove('on'); tagEditing = null; };
+$('tagPop').addEventListener('keydown', ev => ev.stopPropagation());
+
+// ---------- wiring ----------
+['nameIn', 'descIn', 'recIn'].forEach(id => $(id).addEventListener('change', () => commit()));
+$('nameIn').addEventListener('input', ev => { const n = byId(sel); if (n) { n.name = ev.target.value || 'Untitled'; touch(); render(); refreshReady(); } });
+$('descIn').addEventListener('input', ev => { const n = byId(sel); if (n) { n.desc = ev.target.value; ev.target.classList.remove('err'); touch(); render(); } });
+$('recIn').addEventListener('input', ev => { const n = byId(sel); if (n) { n.record = ev.target.value; ev.target.classList.remove('err'); touchReview(n); touch(); } });
+let msArm = false; // ◇ armed: next calendar-day click assigns the open task / selection
+$('msBtn').addEventListener('click', () => { const n = byId(sel); if (!n) return;
+  const holders = S.milestones.filter(m => m.parts.includes(n.id));
+  if (holders.length && !msArm) { const target = holders.find(m => m.id === focus); (target ? [target] : holders).forEach(m => m.parts = m.parts.filter(id => id !== n.id)); commit(); return; }
+  msArm = !msArm; refreshWin(); });
+$('msBtn').addEventListener('mouseenter', () => { const n = byId(sel); if (n && !msArm && S.milestones.some(m => m.parts.includes(n.id))) { $('msBtn').textContent = '✕'; $('msBtn').style.color = 'var(--danger)'; } });
+$('msBtn').addEventListener('mouseleave', () => refreshWin());
+function armedIds() { return selected.size > 1 ? [...selected] : sel ? [sel] : []; }
+$('delBtn').addEventListener('click', () => selected.size && removeSelected());
+$('reviewedBtn').addEventListener('click', () => { const n = byId(sel); if (n) { touchReview(n, true); commit(); } });
+$('startBtn').addEventListener('click', () => { const n = byId(sel); if (n && startable(n)) { setInProgress(n.id); commit(); } });
+$('stopBtn').addEventListener('click', () => { if (S.inProgress === sel) { setInProgress(null); commit(); } });
+$('doneBtn').addEventListener('click', () => { const n = byId(sel); if (!n) return; if (n.done) markDone(n, false); else { if (S.inProgress !== n.id || !recordOk(n)) return; markDone(n, true); } commit(); });
+$('newBtn').onclick = newProject; $('openBtn').onclick = openProject;
+$('saveBtn').onclick = () => saveProject(false); $('saveAsBtn').onclick = () => saveProject(true);
+$('file').addEventListener('change', async ev => { const f = ev.target.files[0]; if (f) await loadFile(f); ev.target.value = ''; });
+$('proj').onclick = () => { const v = prompt('Project name', S.name); if (v != null && v.trim()) { S.name = v.trim(); touch(); } };
+$('proj').style.cursor = 'pointer'; $('proj').title = 'Rename project';
+function item(n, cls) {
+  const li = document.createElement('li'); li.className = 'item ' + cls;
+  li.innerHTML = `<span class="n"></span>`; li.querySelector('.n').textContent = n.name;
+  li.onclick = () => { toDesign(); select(n.id); if (!n.done) { cam.x = Math.min(0, -(n.x * cam.z) + 40); cam.y = Math.min(0, -(n.y * cam.z) + 100); clampCam(); } render(); placeWin(); };
+  return li;
+}
+function downstream(id) { // undone transitive dependents: count and longest chain
+  const seen = new Set(); let longest = 0;
+  const walk = (x, d) => { for (const y of dependentsOf(x)) { const m = byId(y); if (!m || m.done || (cone && !cone.has(y))) continue; longest = Math.max(longest, d); if (!seen.has(y)) { seen.add(y); walk(y, d + 1); } } };
+  walk(id, 1); return { count: seen.size, chain: longest };
+}
+let calMonth = (() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; })();
+const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const toDesign = () => { if (view !== 'design') setView('design'); };
+function setFocus(id, go = false) { if (go) toDesign(); focus = focus === id ? null : id; msEditing = null; layout(); clampCam(); render(); refreshReady(); placeWin(); }
+let msEditing = null;
+function newMilestone(due, parts) { const m = { id: 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: 'Milestone', due, parts: [...new Set(parts)], history: [{ at: Date.now(), due }], record: '', closedAt: null, pillars: [] }; S.milestones.push(m); log('milestone.created', m.id, { name: m.name, due }); focus = m.id; msEditing = m.id; return m; }
+// ---------- direction metrics ----------
+const DAY = 864e5, median = a => { if (!a.length) return null; const b = [...a].sort((x, y) => x - y); return b[b.length >> 1]; };
+function metrics() {
+  const now = Date.now(), done = S.nodes.filter(n => n.done && n.doneAt);
+  const recent = done.filter(n => now - n.doneAt < 28 * DAY), oldest = done.length ? Math.min(...done.map(n => n.doneAt)) : now;
+  const weeks = Math.max(1, Math.min(4, (now - oldest) / (7 * DAY)));
+  const rate = recent.length / weeks; // cards per week, last 4 weeks (or since first completion)
+  const cycle = median(done.filter(n => n.started).map(n => (n.doneAt - n.started) / DAY));
+  const readyAge = median(done.filter(n => n.readyAt && n.started).map(n => (n.started - n.readyAt) / DAY));
+  return { rate, cycle, readyAge, doneTotal: done.length, recent: recent.length };
+}
+function msReport(m, met = metrics()) {
+  const st = msStats(m), remaining = st.total - st.done, now = Date.now();
+  const paceDays = met.rate > 0 ? remaining / met.rate * 7 : null, pace = paceDays != null ? new Date(now + paceDays * DAY) : null;
+  const daysLeft = m.due ? Math.round((new Date(m.due) - now) / DAY) : null;
+  const slips = Math.max(0, m.history.length - 1), first = m.history[0]?.due, net = first && m.due ? Math.round((new Date(m.due) - new Date(first)) / DAY) : 0;
+  const complete = st.total > 0 && remaining === 0;
+  const startableMs = st.total > 0 && !complete && st.chain <= 1;
+  const status = m.closedAt ? 'approved' : complete ? 'complete' : daysLeft != null && daysLeft < 0 ? 'late' : daysLeft != null && daysLeft < st.chain ? 'unreachable' : startableMs ? 'ready' : daysLeft == null ? 'undated' : pace && pace > new Date(m.due) ? 'behind' : 'on track';
+  return { ...st, remaining, pace, daysLeft, slips, net, complete, status };
+}
+function refreshMilestones() {
+  const fm = msById(focus); $('calFocus').classList.toggle('on', !!fm); $('calFocus').querySelector('.n').textContent = fm ? fm.name : '';
+  const g = $('calGrid'), { y, m } = calMonth, first = new Date(y, m, 1), today = iso(new Date());
+  $('calTitle').textContent = first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  const stats = new Map(S.milestones.map(ms => [ms.id, msStats(ms)])), isDone = ms => { const st = stats.get(ms.id); return st.total > 0 && st.done === st.total; };
+  const byDay = {}; S.milestones.filter(ms => ms.due).forEach(ms => (byDay[ms.due] ||= []).push(ms));
+  g.innerHTML = ''; ['M', 'T', 'W', 'T', 'F', 'S', 'S'].forEach(t => { const e = document.createElement('div'); e.className = 'dh'; e.textContent = t; g.appendChild(e); });
+  const start = new Date(first); start.setDate(1 - ((first.getDay() + 6) % 7));
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start); d.setDate(start.getDate() + i); const k = iso(d), list = byDay[k] || [];
+    const e = document.createElement('div'); e.className = 'd' + (d.getMonth() !== m ? ' out' : '') + (k === today ? ' today' : '') + (list.length ? ' has' : '') + (list.some(ms => ms.id === focus) ? ' focus' : '');
+    e.dataset.day = k; e.textContent = d.getDate(); e.title = list.map(ms => ms.name).join('\n');
+    if (list.length) { const dots = document.createElement('div'); dots.className = 'dots'; list.slice(0, 4).forEach(ms => { const i2 = document.createElement('i'); if (!isDone(ms) && k < today) i2.className = 'late'; dots.appendChild(i2); }); e.appendChild(dots); }
+    e.onclick = () => {
+      if (msArm) { const ids = armedIds(); msArm = false; if (list.length) { const ms = list[0]; ms.parts = [...new Set([...ms.parts, ...ids])]; focus = ms.id; } else newMilestone(k, ids); commit(); return; }
+      if (list.length) { const i2 = list.findIndex(ms => ms.id === focus); setFocus(list[(i2 + 1) % list.length].id, true); } };
+    g.appendChild(e);
+  }
+  const ul = $('calMs'); ul.innerHTML = '';
+  const key = `${y}-${String(m + 1).padStart(2, '0')}`;
+  const shown = S.milestones.filter(ms => !ms.closedAt).filter(ms => (ms.due || '').startsWith(key) || (!ms.due && key === iso(new Date()).slice(0, 7))).sort((a, b) => (a.due || '') < (b.due || '') ? -1 : 1);
+  for (const ms of shown) {
+    const st = stats.get(ms.id), li = document.createElement('li'); li.className = (focus === ms.id ? 'on' : '') + (isDone(ms) ? ' done' : ''); li.dataset.ms = ms.id;
+    const days = ms.due ? Math.round((new Date(ms.due) - Date.now()) / 864e5) : null;
+    li.innerHTML = `<span class="dd">${ms.due ? +ms.due.slice(8) : '·'}</span><span class="n"></span><span class="w"></span>`;
+    const rep = msReport(ms); li.querySelector('.n').textContent = ms.name; li.querySelector('.w').textContent = `${st.done}/${st.total}` + (!isDone(ms) && st.total ? (st.chain <= 1 ? ' · Ready' : ` · ${st.chain} steps`) : '') + (rep.pace && !isDone(ms) ? ' → ' + rep.pace.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '');
+    if (!isDone(ms) && st.total && st.chain <= 1) li.querySelector('.w').style.color = 'var(--done)';
+    if (rep.status === 'behind' || rep.status === 'late') li.querySelector('.w').style.color = 'var(--danger)';
+    if (days != null && !isDone(ms) && days < st.chain) li.querySelector('.w').style.color = 'var(--danger)';
+    li.onclick = ev => { if (msClickSkip) { msClickSkip = false; return; } if (ev.target.closest('.msed')) return; setFocus(ms.id, true); };
+    if (msEditing === ms.id) {
+      const ed = document.createElement('div'); ed.className = 'msed'; ed.onclick = ev => ev.stopPropagation();
+      const inp = document.createElement('input'); inp.className = 'tb'; inp.value = ms.name; inp.oninput = () => { ms.name = inp.value || 'Milestone'; touch(); }; inp.onkeydown = ev => { ev.stopPropagation(); if (ev.key === 'Enter' || ev.key === 'Escape') { msEditing = null; commit(); } };
+      const parts = document.createElement('ul'); parts.className = 'parts';
+      for (const id of ms.parts) { const n = byId(id); if (!n) continue; const p = document.createElement('li'); p.innerHTML = `<span class="n"></span><button class="x">×</button>`; p.querySelector('.n').textContent = n.name; p.querySelector('.n').onclick = () => { select(id); render(); placeWin(); }; p.querySelector('.x').onclick = () => { ms.parts = ms.parts.filter(x => x !== id); commit(); }; parts.appendChild(p); }
+      const row = document.createElement('div'); row.className = 'row';
+      const del = document.createElement('button'); del.className = 'cmd danger'; del.textContent = 'Remove'; del.onclick = () => { log('milestone.removed', ms.id, { name: ms.name }); S.milestones = S.milestones.filter(x => x !== ms); if (focus === ms.id) focus = null; msEditing = null; commit(); };
+      const ok = document.createElement('button'); ok.className = 'cmd'; ok.textContent = 'Done'; ok.onclick = () => { msEditing = null; commit(); };
+      row.append(del, ok); ed.append(inp, parts, row); li.appendChild(ed); setTimeout(() => inp.focus(), 0);
+    } else { const e = document.createElement('span'); e.className = 'ed'; e.textContent = '✎'; e.title = 'Edit'; e.onclick = ev => { ev.stopPropagation(); msEditing = ms.id; refreshMilestones(); }; li.appendChild(e); }
+    ul.appendChild(li);
+  }
+}
+let msDrag = null, msClickSkip = false; // dragging a milestone entry onto a day to move it
+$('calMs').addEventListener('pointerdown', ev => { const li = ev.target.closest('li'); if (!li || ev.button !== 0 || ev.target.closest('.msed,.ed')) return; msDrag = { id: li.dataset.ms, x: ev.clientX, y: ev.clientY, moved: false }; $('calMs').setPointerCapture(ev.pointerId); });
+$('calMs').addEventListener('pointermove', ev => { if (!msDrag) return; if (!msDrag.moved && Math.hypot(ev.clientX - msDrag.x, ev.clientY - msDrag.y) < 4) return; msDrag.moved = true;
+  const g = $('ghost'); g.querySelector('.n').textContent = msById(msDrag.id)?.name || ''; g.querySelector('.s').textContent = 'Milestone'; g.querySelector('.b').style.display = 'none'; g.classList.add('on'); g.style.left = ev.clientX + 10 + 'px'; g.style.top = ev.clientY + 10 + 'px'; g.style.transform = 'scale(.8)';
+  document.querySelectorAll('#calGrid .d.drop').forEach(e => e.classList.remove('drop')); const cd = calDayAt(ev); if (cd) cd.classList.add('drop'); });
+$('calMs').addEventListener('pointerup', ev => { if (!msDrag) return; const d = msDrag; msDrag = null; $('ghost').classList.remove('on'); document.querySelectorAll('#calGrid .d.drop').forEach(e => e.classList.remove('drop'));
+  if (!d.moved) return; msClickSkip = true; const day = calDayAt(ev)?.dataset.day, ms = msById(d.id); if (day && ms && ms.due !== day) { log('milestone.moved', ms.id, { from: ms.due, to: day }); ms.due = day; ms.history.push({ at: Date.now(), due: day }); commit(); } });
+$('calMs').addEventListener('pointercancel', () => { msDrag = null; $('ghost').classList.remove('on'); });
+$('calFocus').querySelector('.x').onclick = () => setFocus(focus);
+$('calPrev').onclick = () => { calMonth.m--; if (calMonth.m < 0) { calMonth.m = 11; calMonth.y--; } refreshMilestones(); };
+$('calNext').onclick = () => { calMonth.m++; if (calMonth.m > 11) { calMonth.m = 0; calMonth.y++; } refreshMilestones(); };
+function msAt(ev) { const el = document.elementFromPoint(ev.clientX, ev.clientY); return el && el.closest ? el.closest('#calMs li') : null; }
+function calDayAt(ev) { const el = document.elementFromPoint(ev.clientX, ev.clientY); return el && el.closest ? el.closest('#calGrid .d') : null; }
+function refreshReady() {
+  refreshMilestones();
+  const rl = $('readyList'); rl.innerHTML = '';
+  const ip = byId(S.inProgress);
+  if (ip && visible(ip)) { const li = item(ip, 'prog'); li.ondblclick = () => { setInProgress(null); commit(); }; const age = ip.started ? Math.floor((Date.now() - ip.started) / DAY) : 0; li.innerHTML = `<span class="ok" style="color:var(--accent)">▶</span><span class="n"></span><span class="w" style="font-size:11px;color:var(--text4)">${age}d</span>`; li.querySelector('.n').textContent = ip.name; rl.appendChild(li); }
+  const ready = S.nodes.filter(n => isReady(n) && visible(n) && n.id !== S.inProgress).map(n => ({ n, w: downstream(n.id) })).sort((a, b) => b.w.chain - a.w.chain || b.w.count - a.w.count || a.n.name.localeCompare(b.n.name));
+  rl.style.display = ready.length || ip ? '' : 'none';
+  for (const { n, w } of ready) { const li = item(n, 'ready'); li.ondblclick = () => { if (S.inProgress !== n.id) { const b = startBlock(n); if (b) { flash(`Not startable: "${b.m.name}" is ${b.chain} steps deep.`); return; } } setInProgress(S.inProgress === n.id ? null : n.id); commit(); }; const hb = startBlock(n); if (hb) { li.style.borderLeftColor = 'var(--text4)'; li.title = `Held by ${hb.m.name} (${hb.chain} steps)`; }
+    const wait = n.readyAt ? Math.floor((Date.now() - n.readyAt) / DAY) : 0; const k = document.createElement('span'); k.className = 'w'; k.style.cssText = 'font-size:11px;color:var(--text4)'; k.textContent = (w.count ? `↳ ${w.count}` : '') + (wait >= 1 ? (w.count ? ' · ' : '') + wait + 'd' : ''); k.title = `Unblocks ${w.count} (chain ${w.chain}) · waiting ${wait}d`; if (k.textContent) li.appendChild(k); rl.appendChild(li); }
+  const dl = $('doneList'), done = S.nodes.filter(n => n.done && (!cone || cone.has(n.id))).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0)); dl.innerHTML = '';
+  $('doneCount').textContent = done.length ? done.length : '';
+  dl.style.display = done.length ? '' : 'none';
+  const weekOf = ts => { if (!ts) return null; const d = new Date(ts); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.getTime(); };
+  const thisWeek = weekOf(Date.now()); let cur = undefined;
+  for (const n of done) {
+    const wk = weekOf(n.doneAt);
+    if (wk !== cur) { cur = wk; const open = wk === thisWeek || openWeeks.has(wk); const h = document.createElement('li'); h.className = 'wk' + (open ? ' open' : '');
+      h.textContent = wk == null ? 'Earlier' : wk === thisWeek ? 'This week' : new Date(wk).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+      const c = done.filter(m => weekOf(m.doneAt) === wk).length; h.innerHTML = `<span class="n">${h.textContent}</span><span class="w">${c}</span>`;
+      h.onclick = () => { if (openWeeks.has(wk)) openWeeks.delete(wk); else openWeeks.add(wk); refreshReady(); }; dl.appendChild(h);
+      if (!open) continue; }
+    else if (!(wk === thisWeek || openWeeks.has(wk))) continue;
+    const li = item(n, 'done'); li.ondblclick = () => { markDone(n, false); commit(); }; dl.appendChild(li);
+  }
+}
+
+$('sideBtn').onclick = () => { const on = document.getElementById('app').classList.toggle('nosb'); resize(); try { window.storage.set('depplan:sidebar', on ? '0' : '1', false).catch(() => {}); } catch (e) {} };
+try { window.storage.get('depplan:sidebar', false).then(r => { if (r?.value === '0') { document.getElementById('app').classList.add('nosb'); resize(); } }).catch(() => {}); } catch (e) {}
+document.querySelectorAll('h2.fold').forEach(h => { const key = 'depplan:pane:' + h.dataset.pane, pane = h.parentElement;
+  h.onclick = () => { const c = pane.classList.toggle('closed'); if (c && h.dataset.pane === 'ms' && focus) setFocus(focus); try { window.storage.set(key, c ? '0' : '1', false).catch(() => {}); } catch (e) {} };
+  try { window.storage.get(key, false).then(r => { if (r?.value === '1') pane.classList.remove('closed'); else if (r?.value === '0') pane.classList.add('closed'); }).catch(() => {}); } catch (e) {} });
+let view = 'design';
+function setView(v) {
+  view = v;
+  $('dir').hidden = view !== 'direction'; $('vis').hidden = view !== 'vision';
+  $('cv').style.visibility = view === 'design' ? '' : 'hidden'; $('win').style.display = view === 'design' ? '' : 'none';
+  for (const [id, k] of [['visBtn', 'vision'], ['dirBtn', 'direction'], ['desBtn', 'design']]) $(id).classList.toggle('on', view === k);
+  refreshBadge();
+  if (view === 'direction') renderDir(); if (view === 'vision') renderVis(); if (view === 'design') { resize(); placeWin(); }
+  try { window.storage.set('depplan:view', view, false).catch(() => {}); } catch (e) {}
+}
+function refreshBadge() { const n = view === 'direction' ? 0 : sinceLastVisit().filter(e => !['started', 'stopped'].includes(e.type)).length; $('dirBadge').textContent = n ? n : ''; }
+$('dirBtn').onclick = () => setView('direction'); $('visBtn').onclick = () => setView('vision'); $('desBtn').onclick = () => setView('design');
+try { window.storage.get('depplan:view', false).then(r => { if (r?.value && r.value !== 'design') setView(r.value); }).catch(() => {}); } catch (e) {}
+// ---------- vision ----------
+let visEdit = null; // { statement, pillars:[{id,name,rejects:[]}] } while editing
+function renderVis() {
+  const V = S.vision, el = $('vis'), esc = t => String(t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const uses = id => S.milestones.filter(m => m.pillars.includes(id)).length;
+  let h = '';
+  if (!visEdit) {
+    h += `<div class="stmt${V.statement.trim() ? '' : ' empty'}">${esc(V.statement.trim() || 'No statement yet.')}</div>`;
+    h += `<h2 class="doctrine">Doctrine</h2>`;
+    if (!V.pillars.length) h += `<div class="stmt empty" style="font-size:14px;min-height:0">None.</div>`;
+    for (const p of V.pillars) h += `<div class="pillar"><span class="pn">${esc(p.name)}</span><div class="pd">${(p.rejects || []).length ? p.rejects.map(r => `<div class="rej">${esc(r)}</div>`).join('') : '<span class="muted">—</span>'}</div><span class="pc">${uses(p.id)} milestone${uses(p.id) === 1 ? '' : 's'}</span></div>`;
+    h += `<div class="row"><button class="cmd" id="visEditBtn">Edit</button></div>`;
+  } else {
+    h += `<textarea class="tb" id="visStmt" placeholder="Short and stable. Someone outside the room should be able to reject ideas with it.">${esc(visEdit.statement)}</textarea>`;
+    h += `<h2 class="doctrine">Doctrine</h2><div id="visPillars"></div><div class="row"><button class="cmd" id="visAdd">+ Tenet</button><span class="spacer"></span><button class="cmd" id="visCancel">Cancel</button><button class="cmd primary" id="visCommit">Commit change</button></div>`;
+  }
+  if (V.history.length) { h += '<div class="log"><h2>Changes</h2><ul>'; for (const e of [...V.history].reverse()) h += `<li>${fmtD(e.at)} · ${esc(e.note)}${e.prev ? `<div class="old">${esc(e.prev)}</div>` : ''}</li>`; h += '</ul></div>'; }
+  el.innerHTML = h;
+  if (!visEdit) { $('visEditBtn').onclick = () => { visEdit = JSON.parse(JSON.stringify({ statement: V.statement, pillars: V.pillars })); renderVis(); }; return; }
+  const box = $('visPillars'); const draw = () => { box.innerHTML = ''; visEdit.pillars.forEach((p, i) => {
+      p.rejects = p.rejects || []; const r = document.createElement('div'); r.className = 'tedit-row';
+      const head = document.createElement('div'); head.className = 'th';
+      const n = document.createElement('input'); n.className = 'tb'; n.style.fontWeight = '600'; n.placeholder = 'Tenet'; n.value = p.name; n.oninput = () => p.name = n.value; n.onkeydown = ev => ev.stopPropagation();
+      const x = document.createElement('button'); x.className = 'x'; x.textContent = '×'; x.title = 'Remove tenet'; x.onclick = () => { visEdit.pillars.splice(i, 1); draw(); };
+      head.append(n, x); r.appendChild(head);
+      const add = document.createElement('button'); add.className = 'act'; add.textContent = '+ rejection'; add.style.marginLeft = '20px';
+      const drawRej = () => { [...r.querySelectorAll('.rejrow')].forEach(e => e.remove());
+        p.rejects.forEach((rej, ri) => { const rr2 = document.createElement('div'); rr2.className = 'rejrow';
+          const d = document.createElement('input'); d.className = 'tb'; d.placeholder = 'Rejects…'; d.value = rej; d.oninput = () => p.rejects[ri] = d.value; d.onkeydown = ev => { ev.stopPropagation(); if (ev.key === 'Enter') { p.rejects.splice(ri + 1, 0, ''); drawRej(); r.querySelectorAll('.rejrow input')[ri + 1].focus(); } };
+          const rx = document.createElement('button'); rx.className = 'x'; rx.textContent = '×'; rx.title = 'Remove line'; rx.onclick = () => { p.rejects.splice(ri, 1); drawRej(); };
+          rr2.append(d, rx); r.insertBefore(rr2, add); }); };
+      add.onclick = () => { p.rejects.push(''); drawRej(); r.querySelector('.rejrow:last-of-type input').focus(); };
+      r.appendChild(add); drawRej(); box.appendChild(r); }); };
+  draw();
+  $('visStmt').onkeydown = ev => ev.stopPropagation(); $('visStmt').oninput = () => visEdit.statement = $('visStmt').value;
+  $('visAdd').onclick = () => { visEdit.pillars.push({ id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 4), name: '', rejects: [''] }); draw(); box.querySelector('.tedit-row:last-child .th input').focus(); };
+  $('visCancel').onclick = () => { visEdit = null; renderVis(); };
+  $('visCommit').onclick = () => {
+    visEdit.pillars = visEdit.pillars.filter(p => p.name.trim()).map(p => ({ id: p.id, name: p.name.trim(), rejects: (p.rejects || []).map(r => r.trim()).filter(Boolean) }));
+    const before = V, notes = [];
+    if (before.statement.trim() !== visEdit.statement.trim()) notes.push('Statement ' + (before.statement.trim() ? 'revised' : 'set'));
+    const byIdP = Object.fromEntries(before.pillars.map(p => [p.id, p]));
+    for (const p of visEdit.pillars) { const o = byIdP[p.id]; if (!o) notes.push(`Tenet added: ${p.name}`); else if (o.name !== p.name) notes.push(`Pillar renamed: ${o.name} → ${p.name}`); else if ((o.rejects || []).join('\u0001') !== p.rejects.join('\u0001')) notes.push(`Tenet reworded: ${p.name}`); }
+    for (const o of before.pillars) if (!visEdit.pillars.some(p => p.id === o.id)) notes.push(`Tenet removed: ${o.name}`);
+    if (!notes.length) { visEdit = null; renderVis(); return; }
+    const changed = visEdit.pillars.filter(p => { const o = byIdP[p.id]; return o && (o.name !== p.name || (o.rejects || []).join('\u0001') !== p.rejects.join('\u0001')); }).map(p => p.id).concat(before.pillars.filter(o => !visEdit.pillars.some(p => p.id === o.id)).map(o => o.id));
+    const doctrineChanged = before.statement.trim() !== visEdit.statement.trim();
+    const reach = (changed.length || doctrineChanged) ? reachOf(changed, doctrineChanged) : { milestones: [], cards: [] };
+    if (reach.milestones.length) S.reviews.push({ at: Date.now(), note: notes.join(' · '), tenets: changed, milestones: reach.milestones, cards: reach.cards });
+    log('vision.committed', null, { note: notes.join(' · '), milestones: reach.milestones.length, cards: reach.cards.length }); V.history.push({ at: Date.now(), note: notes.join(' · '), prev: before.statement.trim() !== visEdit.statement.trim() ? before.statement : '' });
+    V.statement = visEdit.statement; V.pillars = visEdit.pillars; visEdit = null;
+    for (const m of S.milestones) m.pillars = m.pillars.filter(id => V.pillars.some(p => p.id === id));
+    commit(); renderVis();
+  };
+}
+let dirSort = { key: 'due', dir: 1 }, dirOpen = null; // expanded milestone id in Direction
+const ACT_GROUPS = { done: ['done', 'reopened'], work: ['started', 'stopped'], ready: ['ready'], placed: ['placed', 'unplaced'], reviews: ['reviewed'], milestones: ['milestone.created', 'milestone.moved', 'milestone.approved', 'milestone.revoked', 'milestone.removed'], vision: ['vision.committed'] };
+const ACT_LABEL = { done: 'Done', work: 'Started / stopped', ready: 'Ready', placed: 'Placed', reviews: 'Reviews', milestones: 'Milestones', vision: 'Vision' };
+let actFilter = { done: true, work: false, ready: false, placed: true, reviews: true, milestones: true, vision: true, recent: false };
+try { window.storage.get('depplan:actfilter', false).then(r => { if (r?.value) actFilter = { ...actFilter, ...JSON.parse(r.value) }; }).catch(() => {}); } catch (e) {}
+const fmtD = d => d ? new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '—', fmtN = (x, u = '') => x == null ? '—' : (Math.round(x * 10) / 10) + u;
+function renderDir() {
+  const met = metrics(), el = $('dir');
+  const STATUS_RANK = { late: 0, unreachable: 1, behind: 2, ready: 3, 'on track': 4, undated: 5, complete: 6, approved: 7 };
+  const keyOf = { status: x => STATUS_RANK[x.r.status], name: x => x.m.name.toLowerCase(), due: x => x.m.due || '9', pace: x => x.r.complete ? Infinity : x.r.pace ? +x.r.pace : Infinity,
+    pillars: x => x.m.pillars.length ? S.vision.pillars.findIndex(p => p.id === x.m.pillars[0]) : 99, steps: x => x.r.complete ? -1 : x.r.chain, progress: x => x.r.total ? x.r.done / x.r.total : 0, slips: x => x.r.slips * 1000 + x.r.net, record: x => (x.m.record ? 0 : 1) };
+  const kf = keyOf[dirSort.key] || keyOf.due;
+  const rows = S.milestones.map(m => ({ m, r: msReport(m, met) })).sort((a, b) => { const ka = kf(a), kb = kf(b); return (ka < kb ? -1 : ka > kb ? 1 : (a.m.due || '9') < (b.m.due || '9') ? -1 : 1) * dirSort.dir; });
+  const th = (key, label) => `<th data-key="${key}" class="${dirSort.key === key ? 'on' : ''}">${label}<span class="ar">${dirSort.key === key ? (dirSort.dir > 0 ? '▲' : '▼') : '⇅'}</span></th>`;
+  const esc = t => String(t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  let h = `<div class="kpis">
+    <div class="kpi"><div class="v">${fmtN(met.rate)}</div><div class="l">cards / week (4-wk)</div></div>
+    <div class="kpi"><div class="v">${fmtN(met.cycle, 'd')}</div><div class="l">median cycle time</div></div>
+    <div class="kpi"><div class="v">${fmtN(met.readyAge, 'd')}</div><div class="l">median wait in Ready</div></div>
+    <div class="kpi"><div class="v">${met.doneTotal}</div><div class="l">done · ${S.nodes.length} total</div></div></div>`;
+  if (S.vision.pillars.length) { const open = S.milestones.filter(m => !m.closedAt), orphans = open.filter(m => !m.pillars.length).length;
+    h += `<h2>Tenets</h2><div class="kpis" style="margin-bottom:20px">` + S.vision.pillars.map(p => { const all = S.milestones.filter(m => m.pillars.includes(p.id)), o = all.filter(m => !m.closedAt).length; return `<div class="kpi"><div class="v">${o}<span class="muted" style="font-size:14px"> / ${all.length}</span></div><div class="l">${esc(p.name)}</div></div>`; }).join('') + `<div class="kpi"><div class="v${orphans ? ' orphan' : ''}">${orphans}</div><div class="l">open milestones serving none</div></div></div>`; }
+  h += `
+    <h2>Milestones <button class="act" id="newMsBtn" style="margin-left:8px">+ New milestone</button></h2><table><tr>${th('status', 'Status')}${th('name', 'Milestone')}${th('pillars', 'Serves')}${th('due', 'Target')}${th('pace', 'At pace')}${th('steps', 'Steps')}${th('progress', 'Progress')}${th('slips', 'Slips')}${th('record', 'Record')}</tr>`;
+  for (const { m, r } of rows) { h += `<tr class="ms${focus === m.id ? ' on' : ''}${dirOpen === m.id ? ' open' : ''}" data-ms="${m.id}"><td><span class="st ${r.status === 'on track' ? 'on' : r.status}">${r.status}</span>${r.status === 'complete' ? ` <button class="act" data-approve="${m.id}">Approve</button>` : r.status === 'approved' ? ` <button class="act warn" data-revoke="${m.id}" title="Revoke approval">↶</button>` : ''}</td><td class="n">${pendingReview(m) ? '<span style="color:#f7c948" title="Doctrine changed since this milestone was last touched">▲</span> ' : ''}${esc(m.name)}</td><td>${m.pillars.length ? m.pillars.map(id => `<span class="pill">${esc(S.vision.pillars.find(p => p.id === id)?.name || '')}</span>`).join('') : (S.vision.pillars.length ? '<span class="orphan">—</span>' : '<span class="muted">—</span>')}</td><td class="num">${fmtD(m.due)}${r.daysLeft != null && !r.complete ? ` <span class="muted">${r.daysLeft}d</span>` : ''}</td><td class="num">${r.complete ? '—' : fmtD(r.pace)}</td><td class="num" style="color:${r.complete ? 'inherit' : stepColor(Math.max(0, r.chain - 1))};font-weight:${r.chain > 1 ? 600 : 400}">${r.complete ? '—' : r.chain <= 1 ? 'Ready' : r.chain}</td><td class="num">${r.done}/${r.total}</td><td class="num">${r.slips ? `${r.slips} <span class="muted">(${r.net > 0 ? '+' : ''}${r.net}d)</span>` : '<span class="muted">—</span>'}</td><td class="rec">${esc(m.record) || '<span class="muted">—</span>'}</td></tr>`;
+    if (dirOpen === m.id) h += `<tr class="exp"><td colspan="9"><div class="expbox" data-exp="${m.id}">
+      <div class="erow"><input class="tb ename" value="${esc(m.name)}" placeholder="Milestone"><input class="tb edate" type="date" value="${m.due || ''}"><button class="act" data-focus="${m.id}">${focus === m.id ? 'Unfocus' : 'Focus on board'}</button>${pendingReview(m) ? `<button class="act" data-rev-ms="${m.id}" style="color:#f7c948">Mark reviewed</button>` : ''}<span class="spacer"></span><button class="act warn" data-remove="${m.id}">Remove milestone</button></div>
+      <div class="ecols"><div><div class="elabel">Tenets served</div><div class="pillarpick">${S.vision.pillars.length ? S.vision.pillars.map(p => `<span class="pp${m.pillars.includes(p.id) ? ' on' : ''}" data-pillar="${p.id}" title="${esc((p.rejects || []).join('\n'))}">${esc(p.name)}</span>`).join('') : '<span class="muted">No pillars defined — see Vision.</span>'}</div>
+        <div class="elabel">Record</div><textarea class="tb rec" data-rec="${m.id}" placeholder="What was actually delivered.">${esc(m.record)}</textarea></div>
+        <div><div class="elabel">Parts <span class="muted">${m.parts.length}</span></div><ul class="parts">${m.parts.map(id => byId(id)).filter(Boolean).map(n => `<li><span class="n${n.done ? ' done' : ''}" data-jump="${n.id}">${esc(n.name)}</span><button class="x" data-part="${n.id}">×</button></li>`).join('') || '<li class="muted">None — drop cards on this milestone in the calendar, or use ◇ on a card.</li>'}</ul></div></div></div></td></tr>`;
+  }
+  h += '</table>';
+  const pendC = S.nodes.filter(n => pendingReview(n)), pendM = S.milestones.filter(m => pendingReview(m));
+  if (pendC.length || pendM.length) { h += `<h2 style="margin-top:24px">Awaiting review <span class="muted">· ${pendM.length} milestone${pendM.length === 1 ? '' : 's'}, ${pendC.length} card${pendC.length === 1 ? '' : 's'}</span></h2><div class="ecols">`;
+    h += `<div><ul class="parts">${pendM.map(m => `<li><span class="n" data-openms="${m.id}">${esc(m.name)}</span><button class="act" data-rev-ms="${m.id}">Reviewed</button></li>`).join('') || '<li class="muted">—</li>'}</ul></div>`;
+    h += `<div><ul class="parts">${pendC.slice(0, 60).map(n => `<li><span class="n${n.done ? ' done' : ''}" data-jump="${n.id}">${esc(n.name)}</span><button class="act" data-rev-card="${n.id}">Reviewed</button></li>`).join('')}${pendC.length > 60 ? `<li class="muted">… ${pendC.length - 60} more</li>` : ''}</ul></div></div>`;
+    h += `<div class="row" style="margin-top:8px"><button class="act warn" id="revAll">Mark all ${pendC.length + pendM.length} reviewed</button></div>`; }
+  const nameOf = e => e.ref ? (byId(e.ref)?.name || S.milestones.find(m => m.id === e.ref)?.name || e.name || '(removed)') : '';
+  const words = { reviewed: 'reviewed', ready: 'became Ready', placed: 'placed on the board', unplaced: 'sent to backlog', started: 'started', stopped: 'stopped', done: 'done', reopened: 'reopened', 'milestone.created': 'milestone created', 'milestone.moved': 'milestone moved', 'milestone.approved': 'milestone approved', 'milestone.revoked': 'approval revoked', 'milestone.removed': 'milestone removed', 'vision.committed': 'vision committed' };
+  const on = new Set(Object.entries(ACT_GROUPS).filter(([k]) => actFilter[k]).flatMap(([, v]) => v));
+  const ev = [...S.events].reverse().filter(e => on.has(e.type) && (!actFilter.recent || (prevSeen && e.at > prevSeen))).slice(0, 120), since = sinceLastVisit().length, fmtT = t => new Date(t).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  if (S.events.length) { h += `<div class="log"><h2>Activity${since ? ` <span class="muted">· ${since} since last visit</span>` : ''}</h2><div class="pillarpick" id="actChips">` + Object.keys(ACT_GROUPS).map(k => `<span class="pp${actFilter[k] ? ' on' : ''}" data-f="${k}">${ACT_LABEL[k]}</span>`).join('') + `<span class="pp${actFilter.recent ? ' on' : ''}" data-f="recent" style="margin-left:12px">Since last visit</span></div><ul>`; let divided = !prevSeen || actFilter.recent;
+    for (const e of ev) { if (!divided && e.at <= prevSeen) { h += '<li class="divider">last visit</li>'; divided = true; }
+      h += `<li><span class="muted">${fmtT(e.at)}</span> · ${words[e.type] || e.type}${e.ref || e.name ? `: <b>${esc(nameOf(e))}</b>` : ''}${e.type === 'milestone.moved' ? ` <span class="muted">${fmtD(e.from)} → ${fmtD(e.to)}</span>` : ''}${e.type === 'vision.committed' && e.milestones ? ` <span class="muted">— ${e.milestones} milestones, ${e.cards} cards affected</span>` : ''}${e.note ? ` <span class="muted">${esc(e.note)}</span>` : ''}${e.by ? ` <span class="muted">· ${esc(e.by)}</span>` : ''}</li>`; }
+    h += '</ul></div>'; }
+  el.innerHTML = h;
+  el.querySelectorAll('tr.ms').forEach(tr => tr.onclick = () => { dirOpen = dirOpen === tr.dataset.ms ? null : tr.dataset.ms; renderDir(); });
+  const box = el.querySelector('.expbox');
+  if (box) { const m = msById(box.dataset.exp); box.onclick = ev => ev.stopPropagation();
+    const nm = box.querySelector('.ename'); nm.onkeydown = ev => ev.stopPropagation(); nm.oninput = () => { m.name = nm.value || 'Milestone'; touch(); }; nm.onchange = () => commit();
+    const dt = box.querySelector('.edate'); dt.onchange = () => { const d = dt.value || null; if (d !== m.due) { log('milestone.moved', m.id, { from: m.due, to: d }); m.due = d; m.history.push({ at: Date.now(), due: d }); commit(); } };
+    box.querySelector('[data-focus]').onclick = () => { setFocus(m.id); renderDir(); };
+    box.querySelector('[data-remove]').onclick = () => { log('milestone.removed', m.id, { name: m.name }); S.milestones = S.milestones.filter(x => x !== m); if (focus === m.id) focus = null; dirOpen = null; commit(); };
+    box.querySelectorAll('[data-pillar]').forEach(c => c.onclick = () => { const id = c.dataset.pillar; m.pillars = m.pillars.includes(id) ? m.pillars.filter(x => x !== id) : [...m.pillars, id]; commit(); });
+    box.querySelectorAll('[data-jump]').forEach(n => n.onclick = () => { setView('design'); select(n.dataset.jump); const node = byId(n.dataset.jump); if (node && !node.done) { cam.x = Math.min(0, -(node.x * cam.z) + 40); cam.y = Math.min(0, -(node.y * cam.z) + 100); clampCam(); } render(); placeWin(); });
+    box.querySelectorAll('[data-part]').forEach(b => b.onclick = () => { m.parts = m.parts.filter(x => x !== b.dataset.part); commit(); }); }
+  el.querySelectorAll('[data-rev-ms]').forEach(b => b.onclick = ev => { ev.stopPropagation(); touchReview(msById(b.dataset.revMs), true); commit(); });
+  el.querySelectorAll('[data-rev-card]').forEach(b => b.onclick = ev => { ev.stopPropagation(); touchReview(byId(b.dataset.revCard), true); commit(); });
+  el.querySelectorAll('[data-openms]').forEach(x => x.onclick = () => { dirOpen = x.dataset.openms; renderDir(); });
+  el.querySelectorAll('[data-jump]').forEach(n => n.onclick = () => { setView('design'); select(n.dataset.jump); const node = byId(n.dataset.jump); if (node && !node.done) { cam.x = Math.min(0, -(node.x * cam.z) + 40); cam.y = Math.min(0, -(node.y * cam.z) + 100); clampCam(); } render(); placeWin(); });
+  const ra = el.querySelector('#revAll'); if (ra) ra.onclick = () => { S.nodes.forEach(n => pendingReview(n) && touchReview(n, true)); S.milestones.forEach(m => pendingReview(m) && touchReview(m, true)); commit(); };
+  const nb = el.querySelector('#newMsBtn'); if (nb) nb.onclick = () => { const m = newMilestone(null, []); focus = null; msEditing = null; dirOpen = m.id; commit(); $('dir').querySelector('.ename')?.focus(); };
+  el.querySelectorAll('textarea[data-rec]').forEach(t => { t.onclick = ev => ev.stopPropagation(); t.onkeydown = ev => ev.stopPropagation(); t.oninput = () => { const mm = msById(t.dataset.rec); mm.record = t.value; touchReview(mm); t.classList.remove('err'); touch(); }; t.onchange = () => commit(); });
+  el.querySelectorAll('button[data-approve]').forEach(b => b.onclick = ev => { ev.stopPropagation(); const m = msById(b.dataset.approve); if (!m.record.trim()) { const t = el.querySelector(`textarea[data-rec="${m.id}"]`); t.classList.add('err'); t.focus(); return; } m.closedAt = Date.now(); touchReview(m); log('milestone.approved', m.id); commit(); });
+  el.querySelectorAll('button[data-revoke]').forEach(b => b.onclick = ev => { ev.stopPropagation(); msById(b.dataset.revoke).closedAt = null; log('milestone.revoked', b.dataset.revoke); commit(); });
+  el.querySelectorAll('#actChips .pp').forEach(c => c.onclick = () => { actFilter[c.dataset.f] = !actFilter[c.dataset.f]; try { window.storage.set('depplan:actfilter', JSON.stringify(actFilter), false).catch(() => {}); } catch (e) {} renderDir(); });
+  el.querySelectorAll('th[data-key]').forEach(t => t.onclick = () => { const k = t.dataset.key; dirSort = { key: k, dir: dirSort.key === k ? -dirSort.dir : 1 }; renderDir(); });
+}
+$('helpBtn').onclick = () => { const h = $('help'); h.hidden = !h.hidden; };
+$('ver').textContent = 'v' + VERSION;
+resize(); load();
+</script>
+</body>
+</html>
