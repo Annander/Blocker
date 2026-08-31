@@ -1,0 +1,112 @@
+# Blocker — changelog
+
+Blocker (formerly Dependency Planner). Semantic Versioning: MAJOR.MINOR.PATCH.
+
+- **3.42.0** (2026-08-31) — Standalone: the artifact-runtime storage API is gone. The session copy and every UI preference (sidebar, panes, active tab, window positions, activity filters) live in localStorage, so the app runs from a plain file or any static host. Styles moved out to blocker.css and the version history to CHANGELOG.md.
+- **3.41.1** (2026-08-30) — Sidebar panes (Milestones, Ready, Done) start collapsed; expand state still remembered per pane.
+- **3.41.0** (2026-08-30) — Backlog always shows an "+ Add task" slot as its first empty row; clicking it creates and opens a task.
+- **3.40.4** (2026-08-30) — Change-log wording: "Pillar added/removed" → "Tenet added/removed" (past entries keep their stored text).
+- **3.40.3** (2026-08-30) — Explicit review (Reviewed / Mark reviewed / Mark all) is logged with who and what; Activity has a Reviews filter.
+- **3.40.2** (2026-08-30) — Rejection lines: red ✕ prefix replaced with a subtle hanging indent + muted dash.
+- **3.40.1** (2026-08-30) — Vision layout: statement at top with no heading; "Doctrine" now heads the tenet list.
+- **3.40.0** (2026-08-30) — Vision page reframed (superseded by 3.40.1).
+- **3.39.2** (2026-08-30) — Vision edit: "+ Pillar" button relabelled "+ Tenet".
+- **3.39.1** (2026-08-30) — Internal: search result key renamed pillar → tenet.
+- **3.39.0** (2026-08-30) — Tenets can carry multiple rejection lines (rejects[]); editor adds/removes lines per tenet; read view and milestone tooltips list them. Old single desc migrates to rejects[0].
+- **3.38.0** (2026-08-30) — Downward propagation: a Doctrine/Tenet change records its reach (milestones serving the changed tenets, and every card in their cones) on the event and in reviews[]. Affected cards and milestones are flagged "awaiting review" until touched (record edited, done, approved) or marked reviewed. Board marks flagged cards; Direction lists what's awaiting review; Activity shows the reach.
+- **3.37.0** (2026-08-30) — Vision terminology: the statement is the Doctrine, pillars are Tenets (Vision tab, milestone editor, Direction column, search).
+- **3.36.2** (2026-08-29) — Arrows run down the gutter centre with no per-arrow offset, so shared segments overlap exactly.
+- **3.36.1** (2026-08-29) — "Only Ready work can be worked on" reinforced: milestones whose parts are all Ready report status "ready" (Steps shows "Ready" instead of 1) in Direction and the calendar; deeper ones show their step count in depth colour; legend states the rule.
+- **3.36.0** (2026-08-29) — Hard constraint: a card that belongs to an open milestone with more than one step can't be started — the milestone isn't startable until every part is Ready. Start is hidden and double-click reports which milestone and how many parts still have prerequisites. Cards outside milestones are unconstrained.
+- **3.35.0** (2026-08-29) — Remembers the last opened project file (handle kept in IndexedDB). On launch it reopens it directly if the browser still holds permission; otherwise a "Reopen <file>" button in the header asks once. Falls back to the session copy as before.
+- **3.34.1** (2026-08-29) — Direction: the Steps figure is coloured on the board's depth scale (green → red).
+- **3.34.0** (2026-08-29) — Direction: milestone rows expand on click — name, target date, pillars, record (always editable), parts (jump / remove), focus on board, remove milestone. "New milestone" creates an empty, undated one. Pillar picker removed from the sidebar editor (sidebar keeps name and parts).
+- **3.33.2** (2026-08-29) — Direction Activity: filter chips (Done · Started/stopped · Ready · Placed · Milestones · Vision · Since last visit), remembered.
+- **3.33.1** (2026-08-29) — Hovering ◆ on a task in a milestone shows ✕; click removes it (from the focused milestone if it contains the card, else from all).
+- **3.33.0** (2026-08-29) — Task window footer: Start on Ready cards; Done and Stop on the in-progress card.
+- **3.32.2** (2026-08-29) — All arrows use the same rounded-orthogonal shape; curves removed. Detours only when a card is in the way.
+- **3.32.1** (2026-08-29) — Clicking the zoom figure in the header resets zoom to 100%.
+- **3.32.0** (2026-08-29) — Event log: every state change (placed, started, stopped, done, reopened, became Ready, milestone created/moved/approved/revoked, vision committed) is appended to events[] with who and when. Direction shows an Activity list with a "since last visit" divider; the tab shows the count of things that changed while you were away. lastSeen stored on the project. Authorship is "you" until sign-in exists.
+- **3.31.0** (2026-08-28) — Milestone approval is director-owned: a complete milestone is approved from the Direction tab (record written there, Approve button), and can be revoked there. Status "closed" → "approved". Search also finds milestones (focus) and pillars (Vision). Text edits become undo steps when the field is left. Search bar has a magnifier.
+- **3.30.4** (2026-08-28) — Cleanup: dead code and CSS from removed features (toggles, window bar, milestone flyout) dropped; deleting a card also removes it from milestone parts; legend covers milestone gestures.
+- **3.30.3** (2026-08-28) — Title icon removed; sidebar toggle moved into the top-left corner of the content area.
+- **3.30.2** (2026-08-28) — Name set in all caps: BLOCKER.
+- **3.30.1** (2026-08-28) — Fix: hiding the sidebar collapsed the board into the zero-width column (grid auto-placement).
+- **3.30.0** (2026-08-28) — Renamed: Blocker.
+- **3.29.5** (2026-08-28) — Selecting a task, tag or milestone in the sidebar switches to the Design tab if another tab is showing.
+- **3.29.4** (2026-08-28) — "Save as" renamed Duplicate, with an icon.
+- **3.29.3** (2026-08-28) — Vision: pillar names wrap in a fixed-width column instead of pushing the description.
+- **3.29.2** (2026-08-28) — Project name moved ahead of the tabs, bold.
+- **3.29.1** (2026-08-28) — Three exclusive tabs: Vision · Direction · Design (the board). One is always active; Design by default.
+- **3.29.0** (2026-08-28) — Vision tab: project statement and pillars, edited explicitly and committed — every commit is logged with its date. Pillars attach to milestones (picker in the milestone editor) and appear as a column in Direction, plus a per-pillar coverage summary and an orphan count. Data: vision {statement, pillars[], history[]}, milestone.pillars[].
+- **3.28.1** (2026-08-28) — Direction table: Status first; every column header sorts (click toggles direction).
+- **3.28.0** (2026-08-28) — Direction view (header toggle): promises vs delivery. Pace (cards/week, 4-week window), median cycle time, median Ready age; per milestone: target, pace date, remaining chain, progress, slips, status, record. Data: milestone.history (date changes), milestone.record/closedAt (closing a complete milestone requires a Record), node.readyAt. Cards show age in progress; Ready list shows time waiting; calendar entries show pace date.
+- **3.27.6** (2026-08-28) — Collapsing the Milestones pane clears the focused milestone.
+- **3.27.5** (2026-08-28) — Focused-milestone bar moved below the calendar into a fixed-height slot, so the sidebar doesn't reflow.
+- **3.27.4** (2026-08-28) — Fix: focus bar stayed visible after clearing (CSS display overrode hidden).
+- **3.27.3** (2026-08-28) — Focused milestone shown above the calendar with × to clear, regardless of the month displayed.
+- **3.27.2** (2026-08-28) — Calendar interactions settled: day click only focuses; dropping cards (or ◇ + day) adds to that day's milestone or creates one; a milestone's date changes only by dragging its entry onto a day.
+- **3.27.1** (2026-08-28) — ◇ arms instead of opening a flyout: click it, then a calendar day — adds the task (or selection) to that day's milestone, or creates one there. Flyout removed.
+- **3.27.0** (2026-08-28) — ◇ button back beside the task name: opens a flyout listing milestones; click to add/remove the open task (or the whole selection) as a part. ◆ when the task is a part of any milestone.
+- **3.26.2** (2026-08-28) — Double-click a Ready list entry to toggle it in progress.
+- **3.26.1** (2026-08-28) — While a tag or milestone filter is active, columns with no matching cards are hidden; labels keep true depth.
+- **3.26.0** (2026-08-28) — Milestones are no longer cards. They live on the project (milestones[]: name, due, parts) and act as a filter: focusing one restricts the board, Ready and Done to its cone. Create by dropping cards on a calendar day; add parts by dropping on a milestone; rename/remove inline. Sidebar order: Milestones, Ready, Done. Existing milestone cards migrate automatically.
+- **3.25.2** (2026-08-28) — Milestone cards: inner frame removed; the diamond is the only marker.
+- **3.25.1** (2026-08-28) — Sidebar pane titled "Milestones".
+- **3.25.0** (2026-08-28) — Calendar pane replaces the milestone list: month grid with milestone markers. Click a day to set the open milestone's date; drop a card on a day to make it a milestone due then; click a marked day to focus that milestone. Date input removed from the task window.
+- **3.24.0** (2026-08-28) — Milestones: any card can be flagged (◆ next to the name) and given a target date. Milestone cards draw with a diamond, show days-to-target and their longest remaining chain. Sidebar "Milestones" pane lists them with cone progress; click one to focus the board on its cone (transitive prerequisites) — combines with tags. Saved as node.milestone / node.due.
+- **3.23.0** (2026-08-28) — Tag filter hides non-matching cards and collapses the columns to the matches (was: dim).
+- **3.22.1** (2026-08-28) — Perf: indexed edge lookups (large projects with ~1000 links render and lay out smoothly).
+- **3.22.0** (2026-08-28) — A backlog card can't be placed on the board without an Intent (double-click, drag, or being linked): the Intent field is outlined red and focused instead.
+- **3.21.3** (2026-08-28) — Done is only offered for the In-progress card (button and Done-list drop).
+- **3.21.2** (2026-08-28) — Done is only offered for Ready cards (button hidden otherwise; Done-list drops ignore non-Ready cards).
+- **3.21.1** (2026-08-28) — Shorter button labels: Done, Delete, + (tag), New (tag); "in progress" pin shortened to ▶ only.
+- **3.21.0** (2026-08-28) — A card can't be marked done with an empty Record: the field is outlined red and focused instead (button and drop).
+- **3.20.1** (2026-08-28) — Fix: dropping on an empty Done list did nothing (target measured after it collapsed). "Mark done" / "Reopen" button added to the task window footer.
+- **3.20.0** (2026-08-28) — Board columns auto-sort: Ready by cards unblocked (desc), step columns by blocker count (desc), ties by name. Manual reorder within board columns removed; Backlog keeps manual order.
+- **3.19.3** (2026-08-28) — Ready cards show how many cards they transitively unblock (bottom-right, ↳ N).
+- **3.19.2** (2026-08-28) — Blocked cards always show their blocker count (bottom-right), regardless of description.
+- **3.19.1** (2026-08-28) — Fix: write permission is requested once when a file is opened/saved; autosave only runs while the grant is held, otherwise the explicit Save button returns (no prompts while editing).
+- **3.19.0** (2026-08-28) — Ctrl+C / Ctrl+V copy and paste selected cards (with links between them; works across projects via the system clipboard); Ctrl+D duplicates in place. Copies reset done/started/in-progress.
+- **3.18.0** (2026-08-28) — Undo/redo (Ctrl+Z / Ctrl+Shift+Z or Ctrl+Y) for structural changes; delete confirms removed. Ready list ordered by what each card unblocks (longest chain, then count), shown as a suffix. Silent timestamps: created / started / done. Done list grouped by week (current open, older collapsed). With a file handle, changes autosave to the file; Save button and dirty dot hide.
+- **3.17.1** (2026-08-28) — Tag highlight is now AND: a card must carry every selected tag.
+- **3.17.0** (2026-08-28) — Selected sidebar tags both highlight matching cards on the board and apply to new tasks.
+- **3.16.2** (2026-08-28) — Fix: a drag interrupted by pointer cancel / lost capture left the card off-board with a dangling arrow. Drags now always finalise or snap back; native drag/selection disabled on the board.
+- **3.16.1** (2026-08-28) — Dropping a card onto Requires applies to every selected task, not just the open one.
+- **3.16.0** (2026-08-28) — Ctrl/Cmd+Enter in the task window closes it and immediately creates the next task (chain entry).
+- **3.15.1** (2026-08-28) — Ready and Done panes collapse via a chevron in their heading (remembered). "Ready now" → "Ready".
+- **3.15.0** (2026-08-28) — Tags pane moved to the top of the sidebar; sidebar can be collapsed/expanded (button in header, remembered).
+- **3.14.0** (2026-08-28) — Selected sidebar tags no longer highlight the board; they are applied to every new task instead.
+- **3.13.0** (2026-08-28) — Tags pane in the sidebar: all project tags as chips. Click to highlight tagged cards (toggle, combinable), ✎ on hover to rename/recolour/delete, "+" to create without applying.
+- **3.12.2** (2026-08-28) — Requires drop zone is always visible (fixed empty slot) so the window doesn't resize.
+- **3.12.1** (2026-08-28) — Task window title bar removed; drag it from any non-interactive area. Close with Enter, Esc or a board click.
+- **3.12.0** (2026-08-28) — Toggles (On board / Done / In progress) removed from the task window; state is set by drag and double-click only. Double-click a Done list entry to reopen it.
+- **3.11.3** (2026-08-28) — Record placeholder shortened.
+- **3.11.2** (2026-08-28) — Usability helper text removed throughout (toggle hints, empty-state prompts, drop-zone copy).
+- **3.11.1** (2026-08-28) — Task window: Name (unlabelled), then Tags (unlabelled), then the rest; Requires helper text removed.
+- **3.11.0** (2026-08-28) — Location field removed from tasks (dropped from saved data too).
+- **3.10.0** (2026-08-28) — Tags: project-authored labels with colour (none predefined). Managed from a flyout in the task window — create, rename, recolour, delete, apply/remove. Cards show applied tags as colour bars; search also matches tag names. Saved in the project file (tags[], node.tags[]).
+- **3.9.3** (2026-08-28) — Fix: dragged-card ghost is no longer clipped by the board when dragged over the sidebar.
+- **3.9.2** (2026-08-28) — Name capitalised: Dependency Planner.
+- **3.9.1** (2026-08-28) — Double-click on a backlog card places it in Ready; on a blocked card it does nothing (no message).
+- **3.9.0** (2026-08-28) — Double-click toggles In progress (Ready cards only) instead of Done.
+- **3.8.0** (2026-08-28) — Declutter: removed the command-bar "New task" box (Enter does it), Export doc, and Reset order (columns are automatic). Key legend folded behind a ? button. Rule from here: minimal chrome.
+- **3.7.3** (2026-08-28) — Search bar: placeholder text and the empty-state prompt removed; result list only appears with matches.
+- **3.7.2** (2026-08-28) — Search bar is draggable from anywhere on it (results stay clickable); grip strip removed.
+- **3.7.1** (2026-08-28) — Search bar can be dragged by its edge/handle; position is remembered across sessions.
+- **3.7.0** (2026-08-28) — In progress can only be set on a Ready card; it clears automatically if the card leaves Ready.
+- **3.6.2** (2026-08-28) — Fix: In-progress toggle rendered as a block (field-label style overrode the switch layout).
+- **3.6.1** (2026-08-28) — Fix: columns recompute on every change (marking done via toggle/double-click left stale columns).
+- **3.6.0** (2026-08-28) — Done column removed from the board; done tasks are listed in the sidebar under "Done" (click to open, drop a card onto the list to finish it). Board is Backlog · Ready · steps out.
+- **3.5.0** (2026-08-28) — Columns now measure remaining work: a card's column is the longest chain of *unfinished* prerequisites, so finishing everything in Ready promotes the next column. Done cards move to a Done column between Backlog and Ready; dragging across the Ready/Done boundary toggles done.
+- **3.4.1** (2026-08-28) — Enter inside the task window closes it (Ctrl+Enter in text areas). Enter on the board still creates a task.
+- **3.4.0** (2026-08-28) — Dependency arrows are drawn only for selected cards (both directions); the rest are hidden.
+- **3.3.2** (2026-08-28) — Fix: dropping a backlog card onto Requires now moves both cards onto the board immediately.
+- **3.3.1** (2026-08-28) — Fix: dragging a card no longer switches the open task window, so dropping onto Requires works. Dragged cards are drawn as a ghost above the window instead of behind it.
+- **3.3.0** (2026-08-28) — In progress: exactly one task can be marked in progress (toggle in task window); it gets an accent halo on the board and sits at the top of the Ready panel. Saved in the project file. Ready panel empty-state now distinguishes "nothing on the board yet" from "all blocked or done".
+- **3.2.0** (2026-08-28) — Multi-select: Shift+click selects a range (board order), Ctrl/Cmd+click toggles. Delete and backlog/board drags apply to the whole selection. Requirements are now added by dragging cards onto the Requires slot in the task window (Shift+click linking removed).
+- **3.1.0** (2026-08-28) — Space opens a Spotlight-style search over name, intent, record and location; matches are highlighted on the board with the matched text marked, others dimmed. Enter opens a result.
+- **3.0.1** (2026-08-28) — Task window remembers its dragged position across tasks and sessions.
+- **3.0.0** (2026-08-28) — Single-window layout: task editor is a floating window over the board; right sidebar removed, "Ready now" moved to a left sidebar. Import/Export replaced by New / Open / Save project (one JSON file; Save writes back in place where the browser allows). Scrollbars on the board; wheel scrolls, Ctrl+wheel zooms. Enter no longer fires on key repeat.
+- **2.0.0** (2026-08-28) — Removed Vision tab, pillars, and the layer tag/filter. Kept Intent/Record/Location and doc export.
+- **1.0.0** (2026-08-28) — First versioned release.

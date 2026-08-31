@@ -1,355 +1,11 @@
 <!doctype html>
-<!--
-  Blocker (formerly Dependency Planner) — CHANGELOG (Semantic Versioning: MAJOR.MINOR.PATCH)
-  3.41.1 2026-08-30  Sidebar panes (Milestones, Ready, Done) start collapsed; expand state still remembered per pane.
-  3.41.0 2026-08-30  Backlog always shows an "+ Add task" slot as its first empty row; clicking it creates and opens a task.
-  3.40.4 2026-08-30  Change-log wording: "Pillar added/removed" → "Tenet added/removed" (past entries keep their stored text).
-  3.40.3 2026-08-30  Explicit review (Reviewed / Mark reviewed / Mark all) is logged with who and what; Activity has a Reviews filter.
-  3.40.2 2026-08-30  Rejection lines: red ✕ prefix replaced with a subtle hanging indent + muted dash.
-  3.40.1 2026-08-30  Vision layout: statement at top with no heading; "Doctrine" now heads the tenet list.
-  3.40.0 2026-08-30  Vision page reframed (superseded by 3.40.1).
-  3.39.2 2026-08-30  Vision edit: "+ Pillar" button relabelled "+ Tenet".
-  3.39.1 2026-08-30  Internal: search result key renamed pillar → tenet.
-  3.39.0 2026-08-30  Tenets can carry multiple rejection lines (rejects[]); editor adds/removes lines per tenet; read view and milestone tooltips list them. Old single desc migrates to rejects[0].
-  3.38.0 2026-08-30  Downward propagation: a Doctrine/Tenet change records its reach (milestones serving the changed
-                     tenets, and every card in their cones) on the event and in reviews[]. Affected cards and milestones
-                     are flagged "awaiting review" until touched (record edited, done, approved) or marked reviewed.
-                     Board marks flagged cards; Direction lists what's awaiting review; Activity shows the reach.
-  3.37.0 2026-08-30  Vision terminology: the statement is the Doctrine, pillars are Tenets (Vision tab, milestone editor, Direction column, search).
-  3.36.2 2026-08-29  Arrows run down the gutter centre with no per-arrow offset, so shared segments overlap exactly.
-  3.36.1 2026-08-29  "Only Ready work can be worked on" reinforced: milestones whose parts are all Ready report status
-                     "ready" (Steps shows "Ready" instead of 1) in Direction and the calendar; deeper ones show their
-                     step count in depth colour; legend states the rule.
-  3.36.0 2026-08-29  Hard constraint: a card that belongs to an open milestone with more than one step can't be started —
-                     the milestone isn't startable until every part is Ready. Start is hidden and double-click reports
-                     which milestone and how many parts still have prerequisites. Cards outside milestones are unconstrained.
-  3.35.0 2026-08-29  Remembers the last opened project file (handle kept in IndexedDB). On launch it reopens it
-                     directly if the browser still holds permission; otherwise a "Reopen <file>" button in the header
-                     asks once. Falls back to the session copy as before.
-  3.34.1 2026-08-29  Direction: the Steps figure is coloured on the board's depth scale (green → red).
-  3.34.0 2026-08-29  Direction: milestone rows expand on click — name, target date, pillars, record (always editable),
-                     parts (jump / remove), focus on board, remove milestone. "New milestone" creates an empty, undated
-                     one. Pillar picker removed from the sidebar editor (sidebar keeps name and parts).
-  3.33.2 2026-08-29  Direction Activity: filter chips (Done · Started/stopped · Ready · Placed · Milestones · Vision · Since last visit), remembered.
-  3.33.1 2026-08-29  Hovering ◆ on a task in a milestone shows ✕; click removes it (from the focused milestone if it contains the card, else from all).
-  3.33.0 2026-08-29  Task window footer: Start on Ready cards; Done and Stop on the in-progress card.
-  3.32.2 2026-08-29  All arrows use the same rounded-orthogonal shape; curves removed. Detours only when a card is in the way.
-  3.32.1 2026-08-29  Clicking the zoom figure in the header resets zoom to 100%.
-  3.32.0 2026-08-29  Event log: every state change (placed, started, stopped, done, reopened, became Ready, milestone
-                     created/moved/approved/revoked, vision committed) is appended to events[] with who and when.
-                     Direction shows an Activity list with a "since last visit" divider; the tab shows the count of
-                     things that changed while you were away. lastSeen stored on the project. Authorship is "you"
-                     until sign-in exists.
-  3.31.0 2026-08-28  Milestone approval is director-owned: a complete milestone is approved from the Direction tab
-                     (record written there, Approve button), and can be revoked there. Status "closed" → "approved".
-                     Search also finds milestones (focus) and pillars (Vision). Text edits become undo steps when
-                     the field is left. Search bar has a magnifier.
-  3.30.4 2026-08-28  Cleanup: dead code and CSS from removed features (toggles, window bar, milestone flyout) dropped;
-                     deleting a card also removes it from milestone parts; legend covers milestone gestures.
-  3.30.3 2026-08-28  Title icon removed; sidebar toggle moved into the top-left corner of the content area.
-  3.30.2 2026-08-28  Name set in all caps: BLOCKER.
-  3.30.1 2026-08-28  Fix: hiding the sidebar collapsed the board into the zero-width column (grid auto-placement).
-  3.30.0 2026-08-28  Renamed: Blocker.
-  3.29.5 2026-08-28  Selecting a task, tag or milestone in the sidebar switches to the Design tab if another tab is showing.
-  3.29.4 2026-08-28  "Save as" renamed Duplicate, with an icon.
-  3.29.3 2026-08-28  Vision: pillar names wrap in a fixed-width column instead of pushing the description.
-  3.29.2 2026-08-28  Project name moved ahead of the tabs, bold.
-  3.29.1 2026-08-28  Three exclusive tabs: Vision · Direction · Design (the board). One is always active; Design by default.
-  3.29.0 2026-08-28  Vision tab: project statement and pillars, edited explicitly and committed — every commit is
-                     logged with its date. Pillars attach to milestones (picker in the milestone editor) and appear as a
-                     column in Direction, plus a per-pillar coverage summary and an orphan count. Data: vision
-                     {statement, pillars[], history[]}, milestone.pillars[].
-  3.28.1 2026-08-28  Direction table: Status first; every column header sorts (click toggles direction).
-  3.28.0 2026-08-28  Direction view (header toggle): promises vs delivery. Pace (cards/week, 4-week window), median
-                     cycle time, median Ready age; per milestone: target, pace date, remaining chain, progress, slips,
-                     status, record. Data: milestone.history (date changes), milestone.record/closedAt (closing a
-                     complete milestone requires a Record), node.readyAt. Cards show age in progress; Ready list shows
-                     time waiting; calendar entries show pace date.
-  3.27.6 2026-08-28  Collapsing the Milestones pane clears the focused milestone.
-  3.27.5 2026-08-28  Focused-milestone bar moved below the calendar into a fixed-height slot, so the sidebar doesn't reflow.
-  3.27.4 2026-08-28  Fix: focus bar stayed visible after clearing (CSS display overrode hidden).
-  3.27.3 2026-08-28  Focused milestone shown above the calendar with × to clear, regardless of the month displayed.
-  3.27.2 2026-08-28  Calendar interactions settled: day click only focuses; dropping cards (or ◇ + day) adds to that
-                     day's milestone or creates one; a milestone's date changes only by dragging its entry onto a day.
-  3.27.1 2026-08-28  ◇ arms instead of opening a flyout: click it, then a calendar day — adds the task (or selection)
-                     to that day's milestone, or creates one there. Flyout removed.
-  3.27.0 2026-08-28  ◇ button back beside the task name: opens a flyout listing milestones; click to add/remove the
-                     open task (or the whole selection) as a part. ◆ when the task is a part of any milestone.
-  3.26.2 2026-08-28  Double-click a Ready list entry to toggle it in progress.
-  3.26.1 2026-08-28  While a tag or milestone filter is active, columns with no matching cards are hidden; labels keep true depth.
-  3.26.0 2026-08-28  Milestones are no longer cards. They live on the project (milestones[]: name, due, parts) and act
-                     as a filter: focusing one restricts the board, Ready and Done to its cone. Create by dropping
-                     cards on a calendar day; add parts by dropping on a milestone; rename/remove inline. Sidebar
-                     order: Milestones, Ready, Done. Existing milestone cards migrate automatically.
-  3.25.2 2026-08-28  Milestone cards: inner frame removed; the diamond is the only marker.
-  3.25.1 2026-08-28  Sidebar pane titled "Milestones".
-  3.25.0 2026-08-28  Calendar pane replaces the milestone list: month grid with milestone markers. Click a day to set
-                     the open milestone's date; drop a card on a day to make it a milestone due then; click a marked
-                     day to focus that milestone. Date input removed from the task window.
-  3.24.0 2026-08-28  Milestones: any card can be flagged (◆ next to the name) and given a target date. Milestone cards
-                     draw with a diamond, show days-to-target and their longest remaining chain. Sidebar "Milestones"
-                     pane lists them with cone progress; click one to focus the board on its cone (transitive
-                     prerequisites) — combines with tags. Saved as node.milestone / node.due.
-  3.23.0 2026-08-28  Tag filter hides non-matching cards and collapses the columns to the matches (was: dim).
-  3.22.1 2026-08-28  Perf: indexed edge lookups (large projects with ~1000 links render and lay out smoothly).
-  3.22.0 2026-08-28  A backlog card can't be placed on the board without an Intent (double-click, drag, or being
-                     linked): the Intent field is outlined red and focused instead.
-  3.21.3 2026-08-28  Done is only offered for the In-progress card (button and Done-list drop).
-  3.21.2 2026-08-28  Done is only offered for Ready cards (button hidden otherwise; Done-list drops ignore non-Ready cards).
-  3.21.1 2026-08-28  Shorter button labels: Done, Delete, + (tag), New (tag); "in progress" pin shortened to ▶ only.
-  3.21.0 2026-08-28  A card can't be marked done with an empty Record: the field is outlined red and focused instead (button and drop).
-  3.20.1 2026-08-28  Fix: dropping on an empty Done list did nothing (target measured after it collapsed).
-                     "Mark done" / "Reopen" button added to the task window footer.
-  3.20.0 2026-08-28  Board columns auto-sort: Ready by cards unblocked (desc), step columns by blocker count (desc),
-                     ties by name. Manual reorder within board columns removed; Backlog keeps manual order.
-  3.19.3 2026-08-28  Ready cards show how many cards they transitively unblock (bottom-right, ↳ N).
-  3.19.2 2026-08-28  Blocked cards always show their blocker count (bottom-right), regardless of description.
-  3.19.1 2026-08-28  Fix: write permission is requested once when a file is opened/saved; autosave only runs while the
-                     grant is held, otherwise the explicit Save button returns (no prompts while editing).
-  3.19.0 2026-08-28  Ctrl+C / Ctrl+V copy and paste selected cards (with links between them; works across projects
-                     via the system clipboard); Ctrl+D duplicates in place. Copies reset done/started/in-progress.
-  3.18.0 2026-08-28  Undo/redo (Ctrl+Z / Ctrl+Shift+Z or Ctrl+Y) for structural changes; delete confirms removed.
-                     Ready list ordered by what each card unblocks (longest chain, then count), shown as a suffix.
-                     Silent timestamps: created / started / done. Done list grouped by week (current open, older
-                     collapsed). With a file handle, changes autosave to the file; Save button and dirty dot hide.
-  3.17.1 2026-08-28  Tag highlight is now AND: a card must carry every selected tag.
-  3.17.0 2026-08-28  Selected sidebar tags both highlight matching cards on the board and apply to new tasks.
-  3.16.2 2026-08-28  Fix: a drag interrupted by pointer cancel / lost capture left the card off-board with a dangling
-                     arrow. Drags now always finalise or snap back; native drag/selection disabled on the board.
-  3.16.1 2026-08-28  Dropping a card onto Requires applies to every selected task, not just the open one.
-  3.16.0 2026-08-28  Ctrl/Cmd+Enter in the task window closes it and immediately creates the next task (chain entry).
-  3.15.1 2026-08-28  Ready and Done panes collapse via a chevron in their heading (remembered). "Ready now" → "Ready".
-  3.15.0 2026-08-28  Tags pane moved to the top of the sidebar; sidebar can be collapsed/expanded (button in header, remembered).
-  3.14.0 2026-08-28  Selected sidebar tags no longer highlight the board; they are applied to every new task instead.
-  3.13.0 2026-08-28  Tags pane in the sidebar: all project tags as chips. Click to highlight tagged cards (toggle,
-                     combinable), ✎ on hover to rename/recolour/delete, "+" to create without applying.
-  3.12.2 2026-08-28  Requires drop zone is always visible (fixed empty slot) so the window doesn't resize.
-  3.12.1 2026-08-28  Task window title bar removed; drag it from any non-interactive area. Close with Enter, Esc or a board click.
-  3.12.0 2026-08-28  Toggles (On board / Done / In progress) removed from the task window; state is set by drag and
-                     double-click only. Double-click a Done list entry to reopen it.
-  3.11.3 2026-08-28  Record placeholder shortened.
-  3.11.2 2026-08-28  Usability helper text removed throughout (toggle hints, empty-state prompts, drop-zone copy).
-  3.11.1 2026-08-28  Task window: Name (unlabelled), then Tags (unlabelled), then the rest; Requires helper text removed.
-  3.11.0 2026-08-28  Location field removed from tasks (dropped from saved data too).
-  3.10.0 2026-08-28  Tags: project-authored labels with colour (none predefined). Managed from a flyout in the task
-                     window — create, rename, recolour, delete, apply/remove. Cards show applied tags as colour bars;
-                     search also matches tag names. Saved in the project file (tags[], node.tags[]).
-  3.9.3  2026-08-28  Fix: dragged-card ghost is no longer clipped by the board when dragged over the sidebar.
-  3.9.2  2026-08-28  Name capitalised: Dependency Planner.
-  3.9.1  2026-08-28  Double-click on a backlog card places it in Ready; on a blocked card it does nothing (no message).
-  3.9.0  2026-08-28  Double-click toggles In progress (Ready cards only) instead of Done.
-  3.8.0  2026-08-28  Declutter: removed the command-bar "New task" box (Enter does it), Export doc, and Reset order
-                     (columns are automatic). Key legend folded behind a ? button. Rule from here: minimal chrome.
-  3.7.3  2026-08-28  Search bar: placeholder text and the empty-state prompt removed; result list only appears with matches.
-  3.7.2  2026-08-28  Search bar is draggable from anywhere on it (results stay clickable); grip strip removed.
-  3.7.1  2026-08-28  Search bar can be dragged by its edge/handle; position is remembered across sessions.
-  3.7.0  2026-08-28  In progress can only be set on a Ready card; it clears automatically if the card leaves Ready.
-  3.6.2  2026-08-28  Fix: In-progress toggle rendered as a block (field-label style overrode the switch layout).
-  3.6.1  2026-08-28  Fix: columns recompute on every change (marking done via toggle/double-click left stale columns).
-  3.6.0  2026-08-28  Done column removed from the board; done tasks are listed in the sidebar under "Done"
-                     (click to open, drop a card onto the list to finish it). Board is Backlog · Ready · steps out.
-  3.5.0  2026-08-28  Columns now measure remaining work: a card's column is the longest chain of *unfinished*
-                     prerequisites, so finishing everything in Ready promotes the next column. Done cards move to a
-                     Done column between Backlog and Ready; dragging across the Ready/Done boundary toggles done.
-  3.4.1  2026-08-28  Enter inside the task window closes it (Ctrl+Enter in text areas). Enter on the board still creates a task.
-  3.4.0  2026-08-28  Dependency arrows are drawn only for selected cards (both directions); the rest are hidden.
-  3.3.2  2026-08-28  Fix: dropping a backlog card onto Requires now moves both cards onto the board immediately.
-  3.3.1  2026-08-28  Fix: dragging a card no longer switches the open task window, so dropping onto Requires works.
-                     Dragged cards are drawn as a ghost above the window instead of behind it.
-  3.3.0  2026-08-28  In progress: exactly one task can be marked in progress (toggle in task window); it gets an
-                     accent halo on the board and sits at the top of the Ready panel. Saved in the project file.
-                     Ready panel empty-state now distinguishes "nothing on the board yet" from "all blocked or done".
-  3.2.0  2026-08-28  Multi-select: Shift+click selects a range (board order), Ctrl/Cmd+click toggles. Delete and
-                     backlog/board drags apply to the whole selection. Requirements are now added by dragging
-                     cards onto the Requires slot in the task window (Shift+click linking removed).
-  3.1.0  2026-08-28  Space opens a Spotlight-style search over name, intent, record and location; matches are
-                     highlighted on the board with the matched text marked, others dimmed. Enter opens a result.
-  3.0.1  2026-08-28  Task window remembers its dragged position across tasks and sessions.
-  3.0.0  2026-08-28  Single-window layout: task editor is a floating window over the board; right sidebar removed,
-                     "Ready now" moved to a left sidebar. Import/Export replaced by New / Open / Save project
-                     (one JSON file; Save writes back in place where the browser allows). Scrollbars on the board;
-                     wheel scrolls, Ctrl+wheel zooms. Enter no longer fires on key repeat.
-  2.0.0  2026-08-28  Removed Vision tab, pillars, and the layer tag/filter. Kept Intent/Record/Location and doc export.
-  1.0.0  2026-08-28  First versioned release.
--->
+<!-- Blocker (formerly Dependency Planner) — version history in CHANGELOG.md; VERSION below is the source of truth. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BLOCKER 3.41.1</title>
-<style>
-  :root{
-    --base:#202020; --layer:#272727; --layer2:#2c2c2c; --card:#333333; --card-hover:#3a3a3a;
-    --stroke:rgba(255,255,255,.08); --stroke2:rgba(255,255,255,.16);
-    --text:#ffffff; --text2:rgba(255,255,255,.78); --text3:rgba(255,255,255,.55); --text4:rgba(255,255,255,.36);
-    --accent:#60cdff; --accent-dim:rgba(96,205,255,.12);
-    --done:#6ccb5f; --danger:#ff99a4;
-    --font:"Segoe UI Variable","Segoe UI",system-ui,-apple-system,sans-serif;
-    --mono:"Cascadia Mono","Cascadia Code",Consolas,ui-monospace,monospace;
-    --r:4px;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%;margin:0;background:var(--base);color:var(--text);font:14px/20px var(--font);overflow:hidden}
-  #app{display:grid;grid-template-rows:48px 1fr;grid-template-columns:260px 1fr;height:100%}
-  aside{grid-column:1;grid-row:2} #stage{grid-column:2;grid-row:2}
-  #app.nosb{grid-template-columns:0 1fr} #app.nosb aside{display:none}
-  header{grid-column:1/3;display:flex;align-items:center;gap:6px;padding:0 12px;background:var(--layer);border-bottom:1px solid var(--stroke)}
-  header .title{font-size:12px;letter-spacing:.08em;font-weight:600;color:var(--text2);margin-right:8px;display:flex;align-items:center;gap:10px;white-space:nowrap}
-  header .title svg{opacity:.8}
-  #proj{font-size:14px;font-weight:600;color:var(--text);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  #dirty{color:var(--accent);display:none} #dirty.on{display:inline}
-  .cmd{display:flex;align-items:center;gap:6px;height:32px;padding:0 10px;border-radius:var(--r);border:1px solid transparent;background:transparent;color:var(--text);font:14px var(--font);cursor:pointer;white-space:nowrap}
-  .cmd:hover{background:rgba(255,255,255,.06)} .cmd:active{background:rgba(255,255,255,.03);color:var(--text3)}
-  .cmd:focus-visible{outline:2px solid var(--text);outline-offset:1px}
-  .cmd svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
-  .cmd.danger:hover{color:var(--danger)}
-  .cmd.tab{border-bottom:2px solid transparent;border-radius:var(--r) var(--r) 0 0} .cmd.tab.on{border-bottom-color:var(--accent);background:rgba(255,255,255,.05)}
-  .sep{width:1px;height:20px;background:var(--stroke2);margin:0 4px}
-  .spacer{flex:1}
-  #stat{font-size:12px;color:var(--text3);font-variant-numeric:tabular-nums;white-space:nowrap} #stat #zoom{cursor:pointer;padding:2px 4px;border-radius:3px} #stat #zoom:hover{background:rgba(255,255,255,.08);color:var(--text)}
-  .tb{width:100%;background:rgba(255,255,255,.06);border:1px solid var(--stroke);border-bottom:1px solid rgba(255,255,255,.55);color:var(--text);padding:6px 10px;border-radius:var(--r);font:14px/20px var(--font);outline:none;resize:vertical}
-  .tb:hover{background:rgba(255,255,255,.08)}
-  .tb:focus{background:rgba(30,30,30,.9);border-bottom:2px solid var(--accent);padding-bottom:5px}
-  .tb::placeholder{color:var(--text4)}
-  input[type=date].tb{color-scheme:dark}
-  .tb.err,.tb.err:focus{border-color:var(--danger);border-bottom:2px solid var(--danger);padding-bottom:5px;background:rgba(255,153,164,.06)}
-    /* left sidebar */
-  aside{background:var(--layer);border-right:1px solid var(--stroke);overflow:auto;display:flex;flex-direction:column}
-  .pane{padding:16px 16px 8px}
-  .pane h2{font:600 14px/20px var(--font);margin:0 0 12px}
-  .pane h2.fold{cursor:pointer;user-select:none;display:flex;align-items:center;gap:6px}
-  .pane h2.fold .chev{margin-left:auto;width:8px;height:8px;border-right:1.5px solid var(--text3);border-bottom:1.5px solid var(--text3);transform:rotate(45deg) translate(-2px,-2px);transition:transform .12s}
-  .pane.closed h2.fold{margin-bottom:0} .pane.closed h2.fold .chev{transform:rotate(-45deg) translate(0,0)} .pane.closed .list{display:none!important}
-  .list{list-style:none;margin:0;padding:0;border:1px solid var(--stroke);border-radius:var(--r);background:var(--layer2);overflow:hidden}
-  .list li{display:flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;border-bottom:1px solid var(--stroke);font-size:13px;min-height:34px}
-  .list li:last-child{border-bottom:0}
-  .list li.item{cursor:pointer} .list li.item:hover{background:rgba(255,255,255,.05)}
-  .list li .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .list li .ok{color:var(--done);font-size:12px;width:12px}
-  .list li .x{border:0;background:transparent;color:var(--text3);width:24px;height:24px;border-radius:var(--r);cursor:pointer;font-size:16px;line-height:1}
-  .list li .x:hover{background:rgba(255,255,255,.08);color:var(--text)}
-  .list li.muted{color:var(--text4);font-size:12px}
-  .list li.ready{border-left:3px solid var(--accent);padding-left:9px}
-  .list li.prog{background:var(--accent-dim)}
-  #calFocus{display:flex;align-items:center;gap:6px;height:30px;margin:10px 0 2px;padding:0 6px 0 10px;border-radius:4px;background:var(--accent-dim);border-left:3px solid var(--accent);font-size:12px;visibility:hidden} #calFocus.on{visibility:visible} #calFocus .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} #calFocus .x{border:0;background:none;color:var(--text3);cursor:pointer;font-size:16px;line-height:1;width:22px;height:22px;border-radius:var(--r)} #calFocus .x:hover{background:rgba(255,255,255,.08);color:var(--text)}
-  #calHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:13px}
-  #calHead button{border:0;background:none;color:var(--text3);font-size:16px;width:24px;height:24px;border-radius:var(--r);cursor:pointer} #calHead button:hover{background:rgba(255,255,255,.08);color:var(--text)}
-  #calGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
-  #calGrid .dh{font-size:10px;color:var(--text4);text-align:center;padding:2px 0}
-  #calGrid .d{position:relative;height:30px;border-radius:3px;font-size:11px;color:var(--text3);padding:3px 0 0 4px;cursor:pointer;user-select:none}
-  #calGrid .d:hover{background:rgba(255,255,255,.06)} #calGrid .d.out{color:var(--text4);opacity:.5} #calGrid .d.today{box-shadow:inset 0 0 0 1px var(--stroke2)}
-  #calGrid .d.has{color:var(--text)} #calGrid .d.focus{background:var(--accent-dim);box-shadow:inset 0 0 0 1px var(--accent)}
-  #calGrid .d.drop{background:var(--accent-dim);box-shadow:inset 0 0 0 1px var(--accent)}
-  #calGrid .dots{position:absolute;left:4px;bottom:3px;display:flex;gap:2px} #calGrid .dots i{width:5px;height:5px;border-radius:50%;background:var(--accent)} #calGrid .dots i.late{background:var(--danger)}
-  #calMs{list-style:none;margin:8px 0 0;padding:0} #calMs li{display:flex;gap:8px;align-items:baseline;font-size:12px;padding:4px 4px;border-radius:3px;cursor:pointer} #calMs li:hover{background:rgba(255,255,255,.05)} #calMs li.on{background:var(--accent-dim)}
-  #calMs li{flex-wrap:wrap} #calMs li.done .n{color:var(--text3);text-decoration:line-through} #calMs .ed{color:var(--text4);display:none;cursor:pointer} #calMs li:hover .ed{display:inline} #calMs li.drop{background:var(--accent-dim);box-shadow:inset 0 0 0 1px var(--accent)}
-  .msed{width:100%;padding:6px 0 2px} .msed .tb{margin-bottom:6px} .msed .parts{list-style:none;margin:0 0 6px;padding:0} .msed .parts li{display:flex;align-items:center;gap:6px;font-size:12px;padding:2px 0;color:var(--text2)} .msed .parts .n{flex:1;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .msed .parts .x{border:0;background:none;color:var(--text4);cursor:pointer} .msed .parts .x:hover{color:var(--danger)} .msed .row{display:flex;gap:6px;justify-content:flex-end} .msed .cmd{height:26px;font-size:12px}
-  #calMs .dd{color:var(--text4);width:24px;text-align:right;flex:none} #calMs .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} #calMs .w{color:var(--text4);font-size:11px}
-  kbd{font:11px var(--mono);color:var(--text2);background:rgba(255,255,255,.08);border:1px solid var(--stroke);border-radius:3px;padding:0 5px}
-  .help{padding:12px 16px;font-size:12px;color:var(--text3);line-height:22px;border-top:1px solid var(--stroke)}
-  /* board */
-  #stage{position:relative;overflow:hidden;background:var(--base)}
-  #dir,#vis{position:absolute;inset:0;overflow:auto;padding:24px 28px 24px 52px;background:var(--base)} #dir[hidden],#vis[hidden]{display:none}
-  #vis{max-width:760px} #vis h2{font:600 14px var(--font);margin:22px 0 10px;color:var(--text2)} #vis h2.doctrine{font-size:18px;color:var(--text);margin-top:28px}
-  #vis .stmt{font:400 20px/1.45 var(--font);white-space:pre-wrap;color:var(--text);min-height:60px} #vis .stmt.empty{color:var(--text4)}
-  #vis textarea.tb{font:400 18px/1.45 var(--font);min-height:120px}
-  #vis .pillar{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--stroke)} #vis .pillar .pn{font-weight:600;flex:0 0 180px;overflow-wrap:anywhere} #vis .pillar .pd{color:var(--text3);flex:1} #vis .pillar .pd .rej{padding:2px 0 2px 16px;text-indent:-16px} #vis .pillar .pd .rej::before{content:'\2013\00a0';color:var(--text4)} #vis .pillar .pc{font-size:12px;color:var(--text4);white-space:nowrap}
-  #vis .pillar .tb{font-size:14px} #vis .pillar .x{border:0;background:none;color:var(--text4);cursor:pointer;font-size:16px} #vis .pillar .x:hover{color:var(--danger)}
-  #vis .row{display:flex;gap:8px;margin-top:14px} #vis .cmd.primary{background:var(--accent);color:#000} #vis .cmd.primary:hover{background:#7ad5ff}
-  #vis .log{margin-top:28px;font-size:12px;color:var(--text3)} #vis .log li{padding:6px 0;border-bottom:1px solid var(--stroke)} #vis .log ul{list-style:none;margin:6px 0 0;padding:0} #vis .log .old{color:var(--text4);white-space:pre-wrap;margin-top:3px}
-  #dir .pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;background:rgba(255,255,255,.07);color:var(--text2);margin-right:4px;white-space:nowrap} #dir .orphan{color:var(--danger)}
-  .pillarpick{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px} .pillarpick .pp{font-size:12px;padding:3px 10px;border-radius:12px;border:1px solid var(--stroke2);color:var(--text3);cursor:pointer;user-select:none} .pillarpick .pp.on{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
-  #dir h2{font:600 14px var(--font);margin:0 0 10px;color:var(--text2)} #dir .kpis{display:flex;gap:28px;margin-bottom:24px;flex-wrap:wrap}
-  #dir .kpi{min-width:120px} #dir .kpi .v{font:600 26px/1.1 var(--font)} #dir .kpi .l{font-size:12px;color:var(--text3);margin-top:2px}
-  #dir table{border-collapse:collapse;width:100%;font-size:13px} #dir th{text-align:left;font-weight:500;color:var(--text3);font-size:12px;padding:6px 10px;border-bottom:1px solid var(--stroke2);cursor:pointer;user-select:none;white-space:nowrap} #dir th:hover{color:var(--text)} #dir th .ar{display:inline-block;width:10px;color:var(--text4);margin-left:3px} #dir th.on{color:var(--text)} #dir th.on .ar{color:var(--accent)}
-  #dir td{padding:8px 10px;border-bottom:1px solid var(--stroke);vertical-align:top} #dir tr.ms{cursor:pointer} #dir tr.ms:hover td{background:rgba(255,255,255,.03)} #dir tr.on td{background:var(--accent-dim)}
-  #dir td.n{font-weight:600} #dir .st{font-size:11px;padding:1px 7px;border-radius:9px;border:1px solid var(--stroke2);color:var(--text2);white-space:nowrap}
-  #dir .st.late,#dir .st.unreachable{color:var(--danger);border-color:var(--danger)} #dir .st.behind{color:#f7c948;border-color:#f7c948} #dir .st.on{color:var(--done);border-color:var(--done)} #dir .st.approved,#dir .st.complete{color:var(--accent);border-color:var(--accent)} #dir .st.ready{color:var(--done);border-color:var(--done);background:rgba(108,203,95,.1)}
-  .act{border:0;background:none;color:var(--accent);cursor:pointer;font:12px var(--font);padding:0 4px;white-space:nowrap} .act:hover{text-decoration:underline}
-  #dir .act{border:0;background:none;color:var(--accent);cursor:pointer;font:12px var(--font);padding:0 4px} #dir .act:hover{text-decoration:underline} #dir .act.warn{color:var(--text4)} #dir .act.warn:hover{color:var(--danger)}
-  #dir textarea.rec{width:100%;min-width:260px;font:12px/1.4 var(--font);min-height:54px}
-  #dir td.rec{color:var(--text3);font-size:12px;max-width:320px;white-space:pre-wrap}
-  #dir tr.open td{background:rgba(255,255,255,.03)} #dir tr.exp td{padding:0 10px 14px;background:rgba(255,255,255,.03);border-bottom:1px solid var(--stroke2)}
-  #dir .expbox{padding:10px 8px 0} #dir .erow{display:flex;gap:10px;align-items:center;margin-bottom:12px} #dir .ename{flex:0 0 320px;font-weight:600} #dir .edate{width:auto;color-scheme:dark}
-  #dir .ecols{display:grid;grid-template-columns:1fr 1fr;gap:24px} #dir .elabel{font-size:12px;color:var(--text3);margin:8px 0 6px} #dir .elabel:first-child{margin-top:0}
-  #dir .parts{list-style:none;margin:0;padding:0;max-height:260px;overflow:auto} #dir .parts li{display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;color:var(--text2)} #dir .parts .n{flex:1;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} #dir .parts .n.done{color:var(--text4);text-decoration:line-through} #dir .parts .x{border:0;background:none;color:var(--text4);cursor:pointer} #dir .parts .x:hover{color:var(--danger)} #dir .parts .muted{font-size:12px} #dir .muted{color:var(--text4)} #dir td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
-  #dir .log{margin-top:24px;font-size:12px;color:var(--text3)} #dir .log li{padding:3px 0} #dir .log .pillarpick{margin-bottom:10px} #dir .log li.divider{color:var(--accent);font-size:11px;letter-spacing:.06em;text-transform:uppercase;border-top:1px dashed var(--accent);margin:6px 0 4px;padding-top:4px} #dir .log ul{list-style:none;margin:6px 0 0;padding:0}
-  canvas{display:block;width:100%;height:100%;cursor:default;touch-action:none;user-select:none;-webkit-user-drag:none}
-  canvas.drag{cursor:grabbing}
-  #msg{position:absolute;left:12px;bottom:12px;font-size:12px;color:var(--danger);background:var(--layer);border:1px solid var(--stroke2);border-radius:var(--r);padding:6px 10px;display:none}
-  #msg.on{display:block}
-  #ghost{position:fixed;pointer-events:none;display:none;z-index:20;width:220px;height:56px;border-radius:4px;background:var(--card-hover);border:1px solid var(--accent);box-shadow:0 10px 30px rgba(0,0,0,.6);padding:8px 14px;transform-origin:top left}
-  #ghost.on{display:block}
-  #ghost .n{font:600 13px var(--font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #ghost .s{font:12px var(--font);color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  #ghost .b{position:absolute;top:-8px;right:-8px;background:var(--accent);color:#000;font:600 11px var(--font);border-radius:9px;padding:0 6px;line-height:18px}
-  /* floating task window */
-  #win{position:absolute;width:340px;background:var(--layer);border:1px solid var(--stroke2);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.4);display:none;flex-direction:column;max-height:calc(100% - 24px)}
-  #win.on{display:flex}
-  #win .bar{display:flex;align-items:center;height:36px;padding:0 4px 0 14px;border-bottom:1px solid var(--stroke);cursor:move;user-select:none;border-radius:8px 8px 0 0;background:var(--layer2)}
-  #win .bar .t{flex:1;font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  #win .bar button{width:36px;height:28px;border:0;background:none;color:var(--text2);font-size:14px;cursor:pointer;border-radius:var(--r)}
-  #win .bar button:hover{background:rgba(255,255,255,.08)}
-  #win{cursor:move} #win .tb,#win .chip,#win .list li,#win button,#win #tagPop{cursor:auto} #win .tb{cursor:text} #win .chip,#win button,#win .list li.item{cursor:pointer}
-  #win .body{padding:14px 16px 6px;overflow:auto}
-  .field{margin-bottom:12px}
-  .field>label:not(.toggle){display:block;font-size:12px;color:var(--text3);margin-bottom:6px}
-  .lay{font:600 10px var(--font);letter-spacing:.06em;color:var(--text4)}
-  .hint{font-size:12px;color:var(--text4);margin:6px 0 0}
-  #depList{min-height:36px} #depList.empty{border-style:dashed;background:transparent}
-  #doneList.drop,#depList.drop{display:block!important;min-height:36px}
-  #doneList.drop{outline:2px dashed var(--done);outline-offset:2px;background:rgba(108,203,95,.1)}
-  .list li.wk{background:rgba(255,255,255,.03);font-size:12px;color:var(--text3);cursor:pointer;min-height:28px;padding-top:3px;padding-bottom:3px} .list li.wk .w{font-size:11px;color:var(--text4)} .list li.wk.open{color:var(--text2)}
-  .list li.done .n{color:var(--text3);text-decoration:line-through}
-  #depList.drop{outline:2px dashed var(--accent);outline-offset:2px;background:var(--accent-dim)}
-  #selCount{font-size:12px;color:var(--accent);margin-left:8px}
-  /* tags */
-  .tagrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-  .chip{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:4px;font:600 12px var(--font);color:#111;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .chip.side{cursor:pointer;position:relative;padding-right:10px;opacity:.85} .chip.side:hover{opacity:1} .chip.side.on{opacity:1;box-shadow:0 0 0 2px var(--text)}
-  .chip.side .ed{display:none;margin-left:6px;font-weight:400} .chip.side:hover .ed{display:inline}
-  #sideTagEdit .tedit{border-top:0;padding-top:10px}
-  .chip.add{background:rgba(255,255,255,.08);color:var(--text2);cursor:pointer;font-weight:400;padding:0 9px}
-  .chip.add:hover{background:rgba(255,255,255,.12)}
-  #tagPop{position:absolute;left:16px;right:16px;background:var(--layer2);border:1px solid var(--stroke2);border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.55);padding:8px;display:none;z-index:3}
-  #tagPop.on{display:block}
-  #tagPop .hd{display:flex;align-items:center;justify-content:space-between;padding:2px 4px 8px;font-size:12px;color:var(--text3)}
-  #tagPop .hd button{border:0;background:none;color:var(--text3);cursor:pointer;font-size:14px;width:24px;height:24px;border-radius:var(--r)} #tagPop .hd button:hover{background:rgba(255,255,255,.08);color:var(--text)}
-  .trow{display:flex;align-items:center;gap:6px;margin-bottom:6px}
-  .trow .pill{flex:1;height:30px;border-radius:4px;display:flex;align-items:center;padding:0 10px;font:600 13px var(--font);color:#111;cursor:pointer;gap:8px;min-width:0}
-  .trow .pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .trow .pill .ck{margin-left:auto;font-size:13px;opacity:0} .trow .pill.on .ck{opacity:1}
-  .trow .pill:hover{filter:brightness(1.1)}
-  .trow .ed{width:30px;height:30px;border:0;background:none;color:var(--text3);cursor:pointer;border-radius:var(--r)} .trow .ed:hover{background:rgba(255,255,255,.08);color:var(--text)}
-  .tedit{padding:6px 4px 2px;border-top:1px solid var(--stroke);margin-top:4px}
-  .tedit .tb{margin-bottom:8px}
-  #visPillars .tedit-row{padding:10px 0;border-bottom:1px solid var(--stroke)} #visPillars .th{display:flex;gap:6px;margin-bottom:6px} #visPillars .th .tb{flex:1} #visPillars .rejrow{display:flex;gap:6px;margin:0 0 6px 20px} #visPillars .rejrow .tb{flex:1} #visPillars .x{border:0;background:none;color:var(--text4);cursor:pointer;font-size:16px} #visPillars .x:hover{color:var(--danger)}
-  .sw8{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-  .sw8 button{width:28px;height:22px;border-radius:4px;border:2px solid transparent;cursor:pointer;padding:0}
-  .sw8 button.on{border-color:#fff}
-  .tedit .row{display:flex;gap:6px;justify-content:flex-end}
-  .tedit .cmd{height:28px;font-size:13px}
-  .tedit .cmd.primary{background:var(--accent);color:#000} .tedit .cmd.primary:hover{background:#7ad5ff}
-  .tnew{width:100%;text-align:center;justify-content:center;height:30px;margin-top:2px;background:rgba(255,255,255,.06)}
-  #win .foot{display:flex;justify-content:flex-end;gap:4px;padding:8px 12px 10px;border-top:1px solid var(--stroke)}
-  /* search overlay */
-  #search{position:absolute;inset:0;display:none;background:rgba(0,0,0,.35);z-index:5}
-  #search.on{display:flex}
-  #searchBox{position:absolute;width:560px;max-width:calc(100% - 40px);background:var(--layer);border:1px solid var(--stroke2);border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.6);overflow:hidden}
-  #searchBox{cursor:move} #searchIn{cursor:text} #searchRes li{cursor:pointer}
-  #searchBox .sin{display:flex;align-items:center;gap:12px;padding:0 18px} #searchBox .sin svg{width:22px;height:22px;fill:none;stroke:var(--text3);stroke-width:1.8;stroke-linecap:round;flex:none}
-  #searchIn{flex:1;border:0;background:transparent;color:var(--text);font:20px/28px var(--font);padding:14px 0;outline:none}
-  #searchIn::placeholder{color:var(--text4)}
-  #searchRes{list-style:none;margin:0;padding:6px;border-top:1px solid var(--stroke);max-height:50vh;overflow:auto}
-  #searchRes li{padding:8px 12px;border-radius:var(--r);cursor:pointer;display:flex;gap:10px;align-items:baseline}
-  #searchRes li.cur,#searchRes li:hover{background:rgba(255,255,255,.07)}
-  #searchRes .n{font-weight:600;white-space:nowrap}
-  #searchRes .c{color:var(--text3);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
-  #searchRes .w{color:var(--text4);font-size:11px;white-space:nowrap}
-  #searchRes mark{background:rgba(96,205,255,.28);color:var(--text);border-radius:2px;padding:0 1px}
-  #searchRes li.muted{color:var(--text4);font-size:12px;cursor:default}
-  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
-</style>
+<title>BLOCKER 3.42.0</title>
+<link rel="stylesheet" href="blocker.css">
 </head>
 <body>
 <div id="app">
@@ -438,7 +94,7 @@
 <div id="ghost"><div class="n"></div><div class="s"></div><div class="b"></div></div>
 
 <script>
-const VERSION = '3.41.1';
+const VERSION = '3.42.0';
 // ---------- state ----------
 const blank = () => ({ name: 'Untitled project', nodes: [], edges: [], inProgress: null, tags: [], milestones: [], vision: { statement: '', pillars: [], history: [] }, events: [], lastSeen: null, reviews: [] });
 let S = blank();               // node {id,name,desc,record,tags,done,placed,x,y,col,row}; edge {from,to}: `to` requires `from`
@@ -448,6 +104,12 @@ let sel = null, cam = { x: 0, y: 0, z: 1 }, dirty = false, fileHandle = null, fi
 const STORE = 'depplan:v3';
 let saveTimer = null;
 const $ = id => document.getElementById(id);
+// ---------- preferences (localStorage) ----------
+const store = { // guarded: a browser with site data blocked throws on access
+  get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  json: k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} },
+};
 
 function migrate(j) {
   const P = { name: j.name || j.project?.name || 'Untitled project', nodes: j.nodes || [], edges: j.edges || [], inProgress: j.inProgress || null, tags: Array.isArray(j.tags) ? j.tags : [], milestones: Array.isArray(j.milestones) ? j.milestones : [], vision: j.vision && typeof j.vision === 'object' ? j.vision : { statement: '', pillars: [], history: [] } };
@@ -462,7 +124,7 @@ function migrate(j) {
   for (const n of P.nodes) { delete n.milestone; delete n.due; n.desc ??= ''; n.placed ??= true; n.record ??= ''; n.created ??= null; n.started ??= null; n.doneAt ??= null; n.readyAt ??= null; n.reviewedAt ??= null; delete n.location; n.tags = (n.tags || []).filter(t => P.tags.some(g => g.id === t)); delete n.layer; delete n.pillars; }
   return P;
 }
-// ---------- last file (IndexedDB holds the handle; window.storage can't) ----------
+// ---------- last file (IndexedDB holds the handle; localStorage can't) ----------
 function idb() { return new Promise((res, rej) => { const r = indexedDB.open('blocker', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
 async function idbSet(k, v) { try { const db = await idb(); await new Promise((res, rej) => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = res; t.onerror = () => rej(t.error); }); } catch (e) {} }
 async function idbGet(k) { try { const db = await idb(); return await new Promise((res, rej) => { const t = db.transaction('kv').objectStore('kv').get(k); t.onsuccess = () => res(t.result); t.onerror = () => rej(t.error); }); } catch (e) { return null; } }
@@ -479,13 +141,15 @@ async function reopenLast() { // returns true if the last file was loaded
 }
 async function load() {
   if (await reopenLast()) return;
-  try { const r = await window.storage.get(STORE, false); if (r && r.value) { const j = JSON.parse(r.value); S = migrate(j); fileName = j._fileName || null; dirty = !!j._dirty; } }
-  catch (e) { try { const r = await window.storage.get('depplan:v1', false); if (r && r.value) { S = migrate(JSON.parse(r.value)); dirty = true; } } catch (e2) {} }
+  const j = store.json(STORE);
+  if (j) { S = migrate(j); fileName = j._fileName || null; dirty = !!j._dirty; }
+  else { const old = store.json('depplan:v1'); if (old) { S = migrate(old); dirty = true; } }
   layout(); startSession(); resetHistory(); render(); refreshReady(); refreshHeader(); renderSideTags(); refreshBadge();
+  if (view === 'direction') renderDir(); else if (view === 'vision') renderVis();
 }
 function autosave() { // session persistence only; the project file is the source of truth
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(async () => { try { await window.storage.set(STORE, JSON.stringify({ ...S, _fileName: fileName, _dirty: dirty }), false); } catch (e) {} }, 300);
+  saveTimer = setTimeout(() => store.set(STORE, JSON.stringify({ ...S, _fileName: fileName, _dirty: dirty })), 300);
 }
 let fileTimer = null, canAutosave = false;
 async function grantWrite(h) { // ask once, at open time; remember whether the grant sticks
@@ -984,7 +648,7 @@ addEventListener('beforeunload', ev => { if (dirty && !(fileHandle && canAutosav
 
 // ---------- floating task window ----------
 let winPos = null; // user-dragged position; once set, every task opens there
-try { window.storage.get('depplan:winpos', false).then(r => { if (r?.value) winPos = JSON.parse(r.value); }).catch(() => {}); } catch (e) {}
+{ const p = store.json('depplan:winpos'); if (p) winPos = p; }
 function select(id, mode = 'single') {
   if (id !== sel) { $('recIn').classList.remove('err'); $('descIn').classList.remove('err'); }
   if (id !== sel) { $('tagPop').classList.remove('on'); tagEditing = null; msArm = false; }
@@ -1044,12 +708,12 @@ W.addEventListener('pointerdown', ev => {
   wdrag = { dx: ev.clientX - W.offsetLeft, dy: ev.clientY - W.offsetTop, moved: false }; W.setPointerCapture(ev.pointerId); ev.preventDefault();
 });
 W.addEventListener('pointermove', ev => { if (!wdrag) return; wdrag.moved = true; winPos = { x: ev.clientX - wdrag.dx, y: ev.clientY - wdrag.dy }; placeWin(); });
-W.addEventListener('pointerup', () => { const m = wdrag?.moved; wdrag = null; if (m) try { window.storage.set('depplan:winpos', JSON.stringify(winPos), false).catch(() => {}); } catch (e) {} });
+W.addEventListener('pointerup', () => { const m = wdrag?.moved; wdrag = null; if (m) store.set('depplan:winpos', JSON.stringify(winPos)); });
 
 // ---------- search ----------
 let cur = 0;
 let searchPos = null;
-try { window.storage.get('depplan:searchpos', false).then(r => { if (r?.value) searchPos = JSON.parse(r.value); }).catch(() => {}); } catch (e) {}
+{ const p = store.json('depplan:searchpos'); if (p) searchPos = p; }
 function placeSearch() {
   const b = $('searchBox'), SW = cv.clientWidth, SH = cv.clientHeight, bw = b.offsetWidth, bh = b.offsetHeight;
   let x = searchPos ? searchPos.x : (SW - bw) / 2, y = searchPos ? searchPos.y : SH * .1;
@@ -1068,7 +732,7 @@ sb.addEventListener('pointermove', ev => {
   if (!sdrag.moved && Math.hypot(ev.clientX - (sb.offsetLeft + sdrag.dx), ev.clientY - (sb.offsetTop + sdrag.dy)) < 3) return;
   sdrag.moved = true; searchPos = { x: ev.clientX - sdrag.dx, y: ev.clientY - sdrag.dy }; placeSearch();
 });
-sb.addEventListener('pointerup', () => { const moved = sdrag?.moved; sdrag = null; $('searchIn').focus(); if (moved) try { window.storage.set('depplan:searchpos', JSON.stringify(searchPos), false).catch(() => {}); } catch (e) {} });
+sb.addEventListener('pointerup', () => { const moved = sdrag?.moved; sdrag = null; $('searchIn').focus(); if (moved) store.set('depplan:searchpos', JSON.stringify(searchPos)); });
 function openSearch() { $('search').classList.add('on'); $('searchIn').value = ''; query = ''; searchHits.clear(); cur = 0; runSearch(); placeSearch(); $('searchIn').focus(); }
 function closeSearch() { $('search').classList.remove('on'); query = ''; searchHits.clear(); render(); }
 const FIELDS = [['name', 'name'], ['desc', 'intent'], ['record', 'record'], ['_tags', 'tag']];
@@ -1315,11 +979,11 @@ function refreshReady() {
   }
 }
 
-$('sideBtn').onclick = () => { const on = document.getElementById('app').classList.toggle('nosb'); resize(); try { window.storage.set('depplan:sidebar', on ? '0' : '1', false).catch(() => {}); } catch (e) {} };
-try { window.storage.get('depplan:sidebar', false).then(r => { if (r?.value === '0') { document.getElementById('app').classList.add('nosb'); resize(); } }).catch(() => {}); } catch (e) {}
+$('sideBtn').onclick = () => { const on = document.getElementById('app').classList.toggle('nosb'); resize(); store.set('depplan:sidebar', on ? '0' : '1'); };
+if (store.get('depplan:sidebar') === '0') { document.getElementById('app').classList.add('nosb'); resize(); }
 document.querySelectorAll('h2.fold').forEach(h => { const key = 'depplan:pane:' + h.dataset.pane, pane = h.parentElement;
-  h.onclick = () => { const c = pane.classList.toggle('closed'); if (c && h.dataset.pane === 'ms' && focus) setFocus(focus); try { window.storage.set(key, c ? '0' : '1', false).catch(() => {}); } catch (e) {} };
-  try { window.storage.get(key, false).then(r => { if (r?.value === '1') pane.classList.remove('closed'); else if (r?.value === '0') pane.classList.add('closed'); }).catch(() => {}); } catch (e) {} });
+  h.onclick = () => { const c = pane.classList.toggle('closed'); if (c && h.dataset.pane === 'ms' && focus) setFocus(focus); store.set(key, c ? '0' : '1'); };
+  const saved = store.get(key); if (saved === '1') pane.classList.remove('closed'); else if (saved === '0') pane.classList.add('closed'); });
 let view = 'design';
 function setView(v) {
   view = v;
@@ -1328,11 +992,10 @@ function setView(v) {
   for (const [id, k] of [['visBtn', 'vision'], ['dirBtn', 'direction'], ['desBtn', 'design']]) $(id).classList.toggle('on', view === k);
   refreshBadge();
   if (view === 'direction') renderDir(); if (view === 'vision') renderVis(); if (view === 'design') { resize(); placeWin(); }
-  try { window.storage.set('depplan:view', view, false).catch(() => {}); } catch (e) {}
+  store.set('depplan:view', view);
 }
 function refreshBadge() { const n = view === 'direction' ? 0 : sinceLastVisit().filter(e => !['started', 'stopped'].includes(e.type)).length; $('dirBadge').textContent = n ? n : ''; }
 $('dirBtn').onclick = () => setView('direction'); $('visBtn').onclick = () => setView('vision'); $('desBtn').onclick = () => setView('design');
-try { window.storage.get('depplan:view', false).then(r => { if (r?.value && r.value !== 'design') setView(r.value); }).catch(() => {}); } catch (e) {}
 // ---------- vision ----------
 let visEdit = null; // { statement, pillars:[{id,name,rejects:[]}] } while editing
 function renderVis() {
@@ -1392,7 +1055,7 @@ let dirSort = { key: 'due', dir: 1 }, dirOpen = null; // expanded milestone id i
 const ACT_GROUPS = { done: ['done', 'reopened'], work: ['started', 'stopped'], ready: ['ready'], placed: ['placed', 'unplaced'], reviews: ['reviewed'], milestones: ['milestone.created', 'milestone.moved', 'milestone.approved', 'milestone.revoked', 'milestone.removed'], vision: ['vision.committed'] };
 const ACT_LABEL = { done: 'Done', work: 'Started / stopped', ready: 'Ready', placed: 'Placed', reviews: 'Reviews', milestones: 'Milestones', vision: 'Vision' };
 let actFilter = { done: true, work: false, ready: false, placed: true, reviews: true, milestones: true, vision: true, recent: false };
-try { window.storage.get('depplan:actfilter', false).then(r => { if (r?.value) actFilter = { ...actFilter, ...JSON.parse(r.value) }; }).catch(() => {}); } catch (e) {}
+{ const f = store.json('depplan:actfilter'); if (f) actFilter = { ...actFilter, ...f }; }
 const fmtD = d => d ? new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '—', fmtN = (x, u = '') => x == null ? '—' : (Math.round(x * 10) / 10) + u;
 function renderDir() {
   const met = metrics(), el = $('dir');
@@ -1453,11 +1116,12 @@ function renderDir() {
   el.querySelectorAll('textarea[data-rec]').forEach(t => { t.onclick = ev => ev.stopPropagation(); t.onkeydown = ev => ev.stopPropagation(); t.oninput = () => { const mm = msById(t.dataset.rec); mm.record = t.value; touchReview(mm); t.classList.remove('err'); touch(); }; t.onchange = () => commit(); });
   el.querySelectorAll('button[data-approve]').forEach(b => b.onclick = ev => { ev.stopPropagation(); const m = msById(b.dataset.approve); if (!m.record.trim()) { const t = el.querySelector(`textarea[data-rec="${m.id}"]`); t.classList.add('err'); t.focus(); return; } m.closedAt = Date.now(); touchReview(m); log('milestone.approved', m.id); commit(); });
   el.querySelectorAll('button[data-revoke]').forEach(b => b.onclick = ev => { ev.stopPropagation(); msById(b.dataset.revoke).closedAt = null; log('milestone.revoked', b.dataset.revoke); commit(); });
-  el.querySelectorAll('#actChips .pp').forEach(c => c.onclick = () => { actFilter[c.dataset.f] = !actFilter[c.dataset.f]; try { window.storage.set('depplan:actfilter', JSON.stringify(actFilter), false).catch(() => {}); } catch (e) {} renderDir(); });
+  el.querySelectorAll('#actChips .pp').forEach(c => c.onclick = () => { actFilter[c.dataset.f] = !actFilter[c.dataset.f]; store.set('depplan:actfilter', JSON.stringify(actFilter)); renderDir(); });
   el.querySelectorAll('th[data-key]').forEach(t => t.onclick = () => { const k = t.dataset.key; dirSort = { key: k, dir: dirSort.key === k ? -dirSort.dir : 1 }; renderDir(); });
 }
 $('helpBtn').onclick = () => { const h = $('help'); h.hidden = !h.hidden; };
 $('ver').textContent = 'v' + VERSION;
+{ const v = store.get('depplan:view'); if (v && v !== 'design') setView(v); }
 resize(); load();
 </script>
 </body>
