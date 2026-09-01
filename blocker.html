@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BLOCKER 3.43.2</title>
+<title>BLOCKER 3.44.0</title>
 <link rel="stylesheet" href="blocker.css">
 </head>
 <body>
@@ -94,7 +94,7 @@
 <div id="ghost"><div class="n"></div><div class="s"></div><div class="b"></div></div>
 
 <script>
-const VERSION = '3.43.2';
+const VERSION = '3.44.0';
 // ---------- state ----------
 const blank = () => ({ name: 'Untitled project', nodes: [], edges: [], inProgress: null, tags: [], milestones: [], vision: { statement: '', pillars: [], history: [] }, events: [], lastSeen: null, reviews: [] });
 let S = blank();               // node {id,name,desc,record,tags,done,placed,x,y,col,row}; edge {from,to}: `to` requires `from`
@@ -939,6 +939,10 @@ function msReport(m, met = metrics()) {
   const status = m.closedAt ? 'approved' : complete ? 'complete' : daysLeft != null && daysLeft < 0 ? 'late' : daysLeft != null && daysLeft < st.chain ? 'unreachable' : startableMs ? 'ready' : daysLeft == null ? 'undated' : pace && pace > new Date(m.due) ? 'behind' : 'on track';
   return { ...st, remaining, pace, daysLeft, slips, net, complete, status };
 }
+const UNSCHEDULED = '__unscheduled__'; // id of the derived bucket: it is computed, never stored, so it can't drift
+function unscheduledDone() { // finished cards no milestone ever claimed — open or approved
+  return S.nodes.filter(n => n.done && !S.milestones.some(m => m.parts.includes(n.id))).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0));
+}
 function refreshMilestones() {
   const fm = msById(focus); $('calFocus').classList.toggle('on', !!fm); $('calFocus').querySelector('.n').textContent = fm ? fm.name : '';
   const g = $('calGrid'), { y, m } = calMonth, first = new Date(y, m, 1), today = iso(new Date());
@@ -1124,6 +1128,13 @@ function renderDir() {
         <div class="elabel">Record</div><textarea class="tb rec" data-rec="${m.id}" placeholder="What was actually delivered.">${esc(m.record)}</textarea></div>
         <div><div class="elabel">Parts <span class="muted">${m.parts.length}</span></div><ul class="parts">${m.parts.map(id => byId(id)).filter(Boolean).map(n => `<li><span class="n${n.done ? ' done' : ''}" data-jump="${n.id}">${esc(n.name)}</span><button class="x" data-part="${n.id}">×</button></li>`).join('') || '<li class="muted">None — drop cards on this milestone in the calendar, or use ◇ on a card.</li>'}</ul></div></div></div></td></tr>`;
   }
+  const uns = unscheduledDone(); // pinned last: it is delivery, not a promise, so it takes no part in the sort
+  if (uns.length) {
+    const uopen = dirOpen === UNSCHEDULED, dash = '<span class="muted">—</span>';
+    h += `<tr class="ms${uopen ? ' open' : ''}" data-ms="${UNSCHEDULED}" title="Finished cards that no milestone claims"><td><span class="st unscheduled">unscheduled</span></td><td class="n">Unscheduled work</td><td>${dash}</td><td class="num">${dash}</td><td class="num">${dash}</td><td class="num">${dash}</td><td class="num">${uns.length}/${uns.length}</td><td class="num">${dash}</td><td class="rec"><span class="muted">Delivered outside every milestone.</span></td></tr>`;
+    if (uopen) h += `<tr class="exp"><td colspan="9"><div class="expbox" data-uexp="1"><div class="elabel">Finished cards <span class="muted">${uns.length}</span> — open one and use ◇ to schedule it into a milestone</div>
+      <ul class="parts">${uns.slice(0, 100).map(n => `<li><span class="n done" data-jump="${n.id}">${esc(n.name)}</span><span class="muted">${fmtD(n.doneAt)}</span></li>`).join('')}${uns.length > 100 ? `<li class="muted">… ${uns.length - 100} more</li>` : ''}</ul></div></td></tr>`;
+  }
   h += '</table>';
   const pendC = S.nodes.filter(n => pendingReview(n)), pendM = S.milestones.filter(m => pendingReview(m));
   if (pendC.length || pendM.length) { h += `<h2 style="margin-top:24px">Awaiting review <span class="muted">· ${pendM.length} milestone${pendM.length === 1 ? '' : 's'}, ${pendC.length} card${pendC.length === 1 ? '' : 's'}</span></h2><div class="ecols">`;
@@ -1140,7 +1151,7 @@ function renderDir() {
     h += '</ul></div>'; }
   el.innerHTML = h;
   el.querySelectorAll('tr.ms').forEach(tr => tr.onclick = () => { dirOpen = dirOpen === tr.dataset.ms ? null : tr.dataset.ms; renderDir(); });
-  const box = el.querySelector('.expbox');
+  const box = el.querySelector('.expbox[data-exp]');
   if (box) { const m = msById(box.dataset.exp); box.onclick = ev => ev.stopPropagation();
     const nm = box.querySelector('.ename'); nm.onkeydown = ev => ev.stopPropagation(); nm.oninput = () => { m.name = nm.value || 'Milestone'; touch(); }; nm.onchange = () => commit();
     const dt = box.querySelector('.edate'); dt.onchange = () => { const d = dt.value || null; if (d !== m.due) { log('milestone.moved', m.id, { from: m.due, to: d }); m.due = d; m.history.push({ at: Date.now(), due: d }); commit(); } };
@@ -1149,6 +1160,7 @@ function renderDir() {
     box.querySelectorAll('[data-pillar]').forEach(c => c.onclick = () => { const id = c.dataset.pillar; m.pillars = m.pillars.includes(id) ? m.pillars.filter(x => x !== id) : [...m.pillars, id]; commit(); });
     box.querySelectorAll('[data-jump]').forEach(n => n.onclick = () => jumpTo(n.dataset.jump));
     box.querySelectorAll('[data-part]').forEach(b => b.onclick = () => { m.parts = m.parts.filter(x => x !== b.dataset.part); commit(); }); }
+  const ubox = el.querySelector('.expbox[data-uexp]'); if (ubox) ubox.onclick = ev => ev.stopPropagation(); // clicks inside must not collapse the row
   el.querySelectorAll('[data-rev-ms]').forEach(b => b.onclick = ev => { ev.stopPropagation(); touchReview(msById(b.dataset.revMs), true); commit(); });
   el.querySelectorAll('[data-rev-card]').forEach(b => b.onclick = ev => { ev.stopPropagation(); touchReview(byId(b.dataset.revCard), true); commit(); });
   el.querySelectorAll('[data-openms]').forEach(x => x.onclick = () => { dirOpen = x.dataset.openms; renderDir(); });
