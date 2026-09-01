@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BLOCKER 3.43.0</title>
+<title>BLOCKER 3.43.1</title>
 <link rel="stylesheet" href="blocker.css">
 </head>
 <body>
@@ -53,7 +53,7 @@
     </div>
     <button class="cmd" id="helpBtn" title="Keys" style="margin:auto 8px 8px auto;width:32px;padding:0;justify-content:center;color:var(--text4)">?</button>
     <div class="help" id="help" hidden>
-      Only <b>Ready</b> work can be started — a card is Ready when all its requirements are done, a milestone when all its parts are Ready<br>
+      Only <b>Ready</b> work can be started — a card is Ready when all its requirements are done; a milestone is Ready when all its parts are, and reports its depth until then<br>
       <kbd>Enter</kbd> new task · in a window: finish &nbsp; <kbd>Ctrl</kbd>+<kbd>Enter</kbd> finish and create next<br>
       <kbd>Click</kbd> open task &nbsp; <kbd>Shift</kbd>+click range &nbsp; <kbd>Ctrl</kbd>+click toggle<br>
       <kbd>Drag</kbd> move Backlog ↔ board, drop onto <i>Requires</i> or <i>Done</i> (board columns auto-sort)<br>
@@ -94,7 +94,7 @@
 <div id="ghost"><div class="n"></div><div class="s"></div><div class="b"></div></div>
 
 <script>
-const VERSION = '3.43.0';
+const VERSION = '3.43.1';
 // ---------- state ----------
 const blank = () => ({ name: 'Untitled project', nodes: [], edges: [], inProgress: null, tags: [], milestones: [], vision: { statement: '', pillars: [], history: [] }, events: [], lastSeen: null, reviews: [] });
 let S = blank();               // node {id,name,desc,record,tags,done,placed,x,y,col,row}; edge {from,to}: `to` requires `from`
@@ -377,11 +377,11 @@ function removeSelected() {
   select(null); layout(); commit();
 }
 function holdingMs(n) { return S.milestones.filter(m => !m.closedAt && m.parts.includes(n.id)); }
-function startBlock(n) { // the milestone (if any) that forbids starting this card: an open holder whose chain exceeds one step
+function deepHold(n) { // the milestone (if any) that isn't startable around this card: an open holder whose chain exceeds one step. Advisory only — a Ready card is always startable
   for (const m of holdingMs(n)) { const st = msStats(m); if (st.chain > 1) { const blocked = m.parts.filter(id => byId(id) && !byId(id).done && !isReady(byId(id))).length; return { m, blocked, chain: st.chain }; } }
   return null;
 }
-const startable = n => isReady(n) && !startBlock(n);
+const startable = n => isReady(n);
 function setInProgress(id) { const was = S.inProgress; S.inProgress = id && byId(id) && startable(byId(id)) ? id : null; if (S.inProgress) byId(S.inProgress).started ??= Date.now(); if (was && was !== S.inProgress) log('stopped', was); if (S.inProgress && S.inProgress !== was) log('started', S.inProgress); }
 function recordOk(n) { // done requires a Record, like a commit requires a message
   if (n.record.trim()) return true;
@@ -635,7 +635,7 @@ cv.addEventListener('pointerup', ev => {
 cv.addEventListener('dblclick', ev => { const n = hit(toWorld(ev)); if (!n) return;
   if (!n.placed) { if (!intentOk(n)) return; n.placed = true; n.row = null; log('placed', n.id); }            // backlog → Ready
   else if (S.inProgress === n.id) setInProgress(null);        // in progress → not
-  else if (isReady(n)) { const b = startBlock(n); if (b) { flashBlock(b); return; } setInProgress(n.id); }   // Ready → in progress
+  else if (isReady(n)) { setInProgress(n.id); const h = deepHold(n); if (h) flashDeep(h); }                  // Ready → in progress (a deep milestone only warns)
   else return;                                                // blocked: nothing to do
   commit(); });
 cv.addEventListener('wheel', ev => {
@@ -911,7 +911,7 @@ function removeMilestone(m) {
   commit();
 }
 function addParts(m, ids) { m.parts = [...new Set([...m.parts, ...ids])]; focus = m.id; }
-function flashBlock(b) { flash(`Not startable: "${b.m.name}" is ${b.chain} steps deep — ${b.blocked} part${b.blocked === 1 ? '' : 's'} still ${b.blocked === 1 ? 'has' : 'have'} prerequisites.`); }
+function flashDeep(h) { flash(`"${h.m.name}" is ${h.chain} steps deep — ${h.blocked} part${h.blocked === 1 ? '' : 's'} still ${h.blocked === 1 ? 'has' : 'have'} prerequisites, so the milestone isn't startable yet.`); }
 function setFocus(id, go = false) { if (go) toDesign(); focus = focus === id ? null : id; msEditing = null; layout(); clampCam(); render(); refreshReady(); placeWin(); }
 let msEditing = null;
 function newMilestone(due, parts) { const m = { id: 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: 'Milestone', due, parts: [...new Set(parts)], history: [{ at: Date.now(), due }], record: '', closedAt: null, pillars: [] }; S.milestones.push(m); log('milestone.created', m.id, { name: m.name, due }); focus = m.id; msEditing = m.id; return m; }
@@ -999,7 +999,7 @@ function refreshReady() {
   if (ip && visible(ip)) { const li = item(ip, 'prog'); li.ondblclick = () => { setInProgress(null); commit(); }; const age = ip.started ? Math.floor((Date.now() - ip.started) / DAY) : 0; li.innerHTML = `<span class="ok" style="color:var(--accent)">▶</span><span class="n"></span><span class="w" style="font-size:11px;color:var(--text4)">${age}d</span>`; li.querySelector('.n').textContent = ip.name; rl.appendChild(li); }
   const ready = S.nodes.filter(n => isReady(n) && visible(n) && n.id !== S.inProgress).map(n => ({ n, w: downstream(n.id) })).sort((a, b) => b.w.chain - a.w.chain || b.w.count - a.w.count || a.n.name.localeCompare(b.n.name));
   rl.style.display = ready.length || ip ? '' : 'none';
-  for (const { n, w } of ready) { const li = item(n, 'ready'); li.ondblclick = () => { if (S.inProgress !== n.id) { const b = startBlock(n); if (b) { flashBlock(b); return; } } setInProgress(S.inProgress === n.id ? null : n.id); commit(); }; const hb = startBlock(n); if (hb) { li.style.borderLeftColor = 'var(--text4)'; li.title = `Held by ${hb.m.name} (${hb.chain} steps)`; }
+  for (const { n, w } of ready) { const li = item(n, 'ready'); li.ondblclick = () => { const start = S.inProgress !== n.id; setInProgress(start ? n.id : null); if (start) { const h = deepHold(n); if (h) flashDeep(h); } commit(); }; const hb = deepHold(n); if (hb) { li.style.borderLeftColor = 'var(--text4)'; li.title = `${hb.m.name} is ${hb.chain} steps deep — the milestone isn't startable yet`; }
     const wait = n.readyAt ? Math.floor((Date.now() - n.readyAt) / DAY) : 0; const k = document.createElement('span'); k.className = 'w'; k.style.cssText = 'font-size:11px;color:var(--text4)'; k.textContent = (w.count ? `↳ ${w.count}` : '') + (wait >= 1 ? (w.count ? ' · ' : '') + wait + 'd' : ''); k.title = `Unblocks ${w.count} (chain ${w.chain}) · waiting ${wait}d`; if (k.textContent) li.appendChild(k); rl.appendChild(li); }
   const dl = $('doneList'), done = S.nodes.filter(n => n.done && visible(n)).sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0)); dl.innerHTML = '';
   $('doneCount').textContent = done.length ? done.length : '';
