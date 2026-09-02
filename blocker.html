@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BLOCKER 3.44.0</title>
+<title>BLOCKER 3.45.0</title>
 <link rel="stylesheet" href="blocker.css">
 </head>
 <body>
@@ -54,7 +54,7 @@
     <button class="cmd" id="helpBtn" title="Keys" style="margin:auto 8px 8px auto;width:32px;padding:0;justify-content:center;color:var(--text4)">?</button>
     <div class="help" id="help" hidden>
       Only <b>Ready</b> work can be started — a card is Ready when all its requirements are done; a milestone is Ready when all its parts are, and reports its depth until then<br>
-      <kbd>Enter</kbd> new task · in a window: finish &nbsp; <kbd>Ctrl</kbd>+<kbd>Enter</kbd> finish and create next<br>
+      <kbd>Enter</kbd> new task — it joins the focused milestone and the selected tags · in a window: finish &nbsp; <kbd>Ctrl</kbd>+<kbd>Enter</kbd> finish and create next<br>
       <kbd>Click</kbd> open task &nbsp; <kbd>Shift</kbd>+click range &nbsp; <kbd>Ctrl</kbd>+click toggle<br>
       <kbd>Drag</kbd> move Backlog ↔ board, drop onto <i>Requires</i> or <i>Done</i> (board columns auto-sort)<br>
       Arrows show for selected cards only<br>
@@ -94,7 +94,7 @@
 <div id="ghost"><div class="n"></div><div class="s"></div><div class="b"></div></div>
 
 <script>
-const VERSION = '3.44.0';
+const VERSION = '3.45.0';
 // ---------- state ----------
 const blank = () => ({ name: 'Untitled project', nodes: [], edges: [], inProgress: null, tags: [], milestones: [], vision: { statement: '', pillars: [], history: [] }, events: [], lastSeen: null, reviews: [] });
 let S = blank();               // node {id,name,desc,record,tags,done,placed,x,y,col,row}; edge {from,to}: `to` requires `from`
@@ -330,6 +330,8 @@ function addTask(name) {
   name = name.trim(); if (!name) return;
   const id = 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   S.nodes.push({ id, name, desc: '', record: '', tags: [...activeTags], created: Date.now(), started: null, doneAt: null, readyAt: null, done: false, placed: false, x: 0, y: 0, row: null });
+  const m = msById(focus); // new work joins the focused milestone, the way it inherits the active tags — otherwise the cone filter would hide the card you just made
+  if (m && !m.closedAt) m.parts.push(id); else if (m) flash(`"${m.name}" is approved — the new card was left unscheduled.`);
   layout(); select(id); commit(); $('nameIn').focus(); $('nameIn').select();
 }
 function addDep(a, b) { // a requires b; returns the card that blocked the link (backlog card with no Intent), else null
