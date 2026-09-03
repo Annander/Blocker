@@ -4,7 +4,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BLOCKER 3.45.0</title>
+<title>BLOCKER 3.45.2</title>
+<!-- icon: the board itself — a filled Ready column, then hollow ones for work still blocked, on the depth scale -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='6' width='7' height='20' rx='2.5' fill='%236ccb5f'/%3E%3Crect x='14' y='7.5' width='4' height='17' rx='1.5' fill='none' stroke='%23f7c948' stroke-width='3'/%3E%3Crect x='23.5' y='7.5' width='4' height='17' rx='1.5' fill='none' stroke='%23e8595f' stroke-width='3'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="blocker.css">
 </head>
 <body>
@@ -94,7 +96,7 @@
 <div id="ghost"><div class="n"></div><div class="s"></div><div class="b"></div></div>
 
 <script>
-const VERSION = '3.45.0';
+const VERSION = '3.45.2';
 // ---------- state ----------
 const blank = () => ({ name: 'Untitled project', nodes: [], edges: [], inProgress: null, tags: [], milestones: [], vision: { statement: '', pillars: [], history: [] }, events: [], lastSeen: null, reviews: [] });
 let S = blank();               // node {id,name,desc,record,tags,done,placed,x,y,col,row}; edge {from,to}: `to` requires `from`
@@ -292,6 +294,8 @@ function layout() { // geometry only: columns, rows, card positions
   const memo = {}, cols = {}, sortKey = new Map();
   for (const n of S.nodes) { n.col = !n.placed ? BACKLOG : n.done ? DONE : depth(n.id, memo); (cols[n.col] ||= []).push(n); }
   colCount = Math.max(1, ...Object.keys(cols).map(x => +x + 1));
+  colPos = null; // display slots first: positioning a card against the previous call's slots left backlog cards a column adrift
+  if (activeTags.size || cone) { colPos = new Map(); let k = 0; for (let d = BACKLOG; d < colCount; d++) if ((cols[d] || []).some(visible)) colPos.set(d, k++); if (!k) colPos.set(0, 0); }
   const rank = (a, b) => sortKey.get(b) - sortKey.get(a) || a.name.localeCompare(b.name);
   for (let d = BACKLOG; d < colCount; d++) {
     const col = cols[d] || [];
@@ -300,9 +304,6 @@ function layout() { // geometry only: columns, rows, card positions
     else { col.forEach(n => sortKey.set(n, depsOf(n.id).filter(x => !byId(x)?.done).length)); col.sort(rank); }
     let i = 0; for (const n of col) { if (!visible(n)) { n.row = null; n.x = -1e6; n.y = -1e6; continue; } n.row = i; n.x = colX(d) + PAD; n.y = rowY(i); i++; }
   }
-  colPos = null;
-  if (activeTags.size || cone) { colPos = new Map(); let k = 0; for (let d = BACKLOG; d < colCount; d++) if ((cols[d] || []).some(visible)) colPos.set(d, k++); if (!k) colPos.set(0, 0); }
-  for (let d = BACKLOG; d < colCount; d++) for (const n of cols[d] || []) if (n.placed && visible(n)) n.x = colX(d) + PAD;
   rowsMax = Math.max(6, ...Object.entries(cols).filter(([d]) => +d !== DONE).map(([, c]) => c.filter(visible).length));
 }
 function reorder(n, dropY) {
