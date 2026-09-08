@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BLOCKER 3.45.2</title>
+<title>BLOCKER 3.45.3</title>
 <!-- icon: the board itself — a filled Ready column, then hollow ones for work still blocked, on the depth scale -->
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='6' width='7' height='20' rx='2.5' fill='%236ccb5f'/%3E%3Crect x='14' y='7.5' width='4' height='17' rx='1.5' fill='none' stroke='%23f7c948' stroke-width='3'/%3E%3Crect x='23.5' y='7.5' width='4' height='17' rx='1.5' fill='none' stroke='%23e8595f' stroke-width='3'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="blocker.css">
@@ -96,7 +96,7 @@
 <div id="ghost"><div class="n"></div><div class="s"></div><div class="b"></div></div>
 
 <script>
-const VERSION = '3.45.2';
+const VERSION = '3.45.3';
 // ---------- state ----------
 const blank = () => ({ name: 'Untitled project', nodes: [], edges: [], inProgress: null, tags: [], milestones: [], vision: { statement: '', pillars: [], history: [] }, events: [], lastSeen: null, reviews: [] });
 let S = blank();               // node {id,name,desc,record,tags,done,placed,x,y,col,row}; edge {from,to}: `to` requires `from`
@@ -1171,7 +1171,12 @@ function renderDir() {
   const ra = el.querySelector('#revAll'); if (ra) ra.onclick = () => { S.nodes.forEach(n => pendingReview(n) && touchReview(n, true)); S.milestones.forEach(m => pendingReview(m) && touchReview(m, true)); commit(); };
   const nb = el.querySelector('#newMsBtn'); if (nb) nb.onclick = () => { const m = newMilestone(null, []); focus = null; msEditing = null; dirOpen = m.id; commit(); $('dir').querySelector('.ename')?.focus(); };
   el.querySelectorAll('textarea[data-rec]').forEach(t => { t.onclick = ev => ev.stopPropagation(); t.onkeydown = ev => ev.stopPropagation(); t.oninput = () => { const mm = msById(t.dataset.rec); mm.record = t.value; touchReview(mm); t.classList.remove('err'); touch(); }; t.onchange = () => commit(); });
-  el.querySelectorAll('button[data-approve]').forEach(b => b.onclick = ev => { ev.stopPropagation(); const m = msById(b.dataset.approve); if (!m.record.trim()) { const t = el.querySelector(`textarea[data-rec="${m.id}"]`); t.classList.add('err'); t.focus(); return; } m.closedAt = Date.now(); touchReview(m); log('milestone.approved', m.id); commit(); });
+  el.querySelectorAll('button[data-approve]').forEach(b => b.onclick = ev => { ev.stopPropagation(); const m = msById(b.dataset.approve);
+    if (!m.record.trim()) { // Approve sits in the collapsed row but the Record field only exists in the expanded one: open it, then ask
+      if (dirOpen !== m.id) { dirOpen = m.id; renderDir(); }
+      const t = el.querySelector(`textarea[data-rec="${m.id}"]`); if (t) { t.classList.add('err'); t.focus(); }
+      flash(`"${m.name}" needs a Record before it can be approved.`); return; }
+    m.closedAt = Date.now(); touchReview(m); log('milestone.approved', m.id); commit(); });
   el.querySelectorAll('button[data-revoke]').forEach(b => b.onclick = ev => { ev.stopPropagation(); msById(b.dataset.revoke).closedAt = null; log('milestone.revoked', b.dataset.revoke); commit(); });
   el.querySelectorAll('#actChips .pp').forEach(c => c.onclick = () => { actFilter[c.dataset.f] = !actFilter[c.dataset.f]; store.set('depplan:actfilter', JSON.stringify(actFilter)); renderDir(); });
   el.querySelectorAll('th[data-key]').forEach(t => t.onclick = () => { const k = t.dataset.key; dirSort = { key: k, dir: dirSort.key === k ? -dirSort.dir : 1 }; renderDir(); });
